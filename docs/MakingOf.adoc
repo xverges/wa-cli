@@ -1,0 +1,87 @@
+= Exploring Watson Assistant
+Xavier Vergés
+v0.1.0, 2020-03-02
+:icons: font
+:toc:
+:toc-placement: preamble
+:source-highlighter: pygments 	// coderay, highlightjs, prettify, and pygments.
+:doctype: Article
+
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
+What follows are the (decorated) notes I'm taking while trying to understand
+how to have Watson Assistant and its associated tooling work in a
+git/CLI/collaborative world.
+
+== Watson Assistant Workbench?
+
+https://github.com/IBM/watson-assistant-workbench[Waston Assistant Workbench]
+has some rough edges around consumability, is unmaintained since Oct 2019,
+uses Python 3.5... but they seem to have taken care of the readability and
+"_diff_-ability" of the dialog definition.
+
+It also manages cloud functions, which would be of help in some ongoing
+internal project that uses functions without version tracking.
+
+=== Running WAW unit tests
+
+I was lucky that I had pre-existing Cloud Functions namespaces, because the
+way WAW manages credentials it expects a CF-based namespace (with an API key in
+the form `user:password`), and those currently cannot be created. 
+  
+Hold it: I think that if I use `apikey` as the user it may work...
+
+```
+$ conda env create -f requirements.yml
+$ conda activate wa-cli
+$ set -o allexport; source .env; set +o allexport
+$ pushd ../tools/watson-assistant-workbench
+$ pip install -r requirements.txt
+$ pip install -r requirements_dev.txt
+$ PYTHONPATH=./scripts:$PYTHONPATH pytest ci/unit_tests
+  ...
+  12 failed, 167 passed, 41 skipped, 39 warnings, 7 errors in 13.91s
+$ PYTHONPATH=./scripts:$PYTHONPATH pytest ci/app_tests
+  ...
+  2 failed, 3 passed in 5.73s
+```
+
+We are getting 403s from
+https://gateway.watsonplatform.net/conversation/api/v1/workspaces?version=2017-02-03
+
+And it is to be expected. From https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/config.ini.sample#L3 
+
+```
+; Update the url for the WA API to match your specific WA region
+; url patterns are found at https://cloud.ibm.com/apidocs/assistant/assistant-v1#service-endpoint
+iam_apikey =
+url = https://api.us-south.assistant.watson.cloud.ibm.com
+
+; Instances created before December 13, 2019 have a url with this pattern
+;url = https://gateway.watsonplatform.net/assistant/api
+```
+
+It is also breaking in the Cloud Functions related code:
+
+* Testing Python 2 runtime (no longer supported)
+* Testing no-CF namespaces: The API now requires
+  an oauth token, and there are some other changes.
+
+But this gave better results (unless you hit the rate limit. Sigh). Note that I
+had to edit `ci/app_tests/generateAndTestWorkspace_data/test.cfg` in order to make
+the second test work.
+
+```
+$ PYTHONPATH=./scripts:$PYTHONPATH TRAVIS_EVENT_TYPE=cron pytest -k 'not functions' ci/unit_tests
+  ...
+  131 passed, 96 deselected, 5 warnings in 33.16s
+$ PYTHONPATH=./scripts:$PYTHONPATH pytest -k 'not TestAndEvaluateFunction' ci/app_tests
+  ...
+  4 passed, 1 deselected in 46.53s
+```
