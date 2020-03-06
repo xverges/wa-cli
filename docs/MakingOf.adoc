@@ -41,7 +41,7 @@ Hold it: I think that if I use `apikey` as the user it may work...
 $ conda env create -f requirements.yml
 $ conda activate wa-cli
 $ set -o allexport; source .env; set +o allexport
-$ pushd ../tools/watson-assistant-workbench
+$ pushd ../watson-assistant-workbench
 $ pip install -r requirements.txt
 $ pip install -r requirements_dev.txt
 $ PYTHONPATH=./scripts:$PYTHONPATH pytest ci/unit_tests
@@ -85,3 +85,20 @@ $ PYTHONPATH=./scripts:$PYTHONPATH pytest -k 'not TestAndEvaluateFunction' ci/ap
   ...
   4 passed, 1 deselected in 46.53s
 ```
+
+=== From Python 3.5 to Python 3.8
+
+Python 3.5 is really old and approaching its end of life. Python 3.8 has some
+nice goodies (_f-strings_, added on 3.6 and improved with `{var=}` in 3.8, or
+faster and smaller dictionaries). 
+
+Conda forced me to install 3.8.1 instead of the ten days old 3.8.2.
+
+```
+$ conda deactivate
+$ conda env remove --name wa-cli
+$ conda activate wa-cli
+$ pip install -r ../watson-assistant-workbench/requirements.txt -r ../watson-assistant-workbench/requirements_dev.txt
+````
+
+The `WAW` unit tests worked fine.
