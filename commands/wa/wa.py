@@ -11,11 +11,12 @@ import click
 import ibm_watson as watson
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 
+from ..helpers import cfg
 
 VERSION = '2020-02-05'
-SkillId = namedtuple('SkillId', ['id', 'name'])
+SkillTuple = namedtuple('SkillTuple', ['id', 'name', 'updated_on'])
 
-skills_folder = os.path.join(os.getcwd(), 'output-skills')
+skills_folder = os.path.join(cfg.get_project_folder(), cfg.SKILLS_FOLDER)
 
 
 def Service(apikey: str, url: str) -> watson.AssistantV1:
@@ -39,14 +40,16 @@ class wa(object):
     def __init__(self, apikey: str, url: str):
         self.service = Service(apikey, url)
 
-    def _list_skills(self, pattern: str = '') -> List[SkillId]:
-        response = self.service.list_workspaces()
+    def _list_skills(self, pattern: str = '',) -> List[SkillTuple]:
+        response = self.service.list_workspaces(include_audit=True)
         _trace_rate_limits('list_workspaces', response)
         results = response.get_result()
         skills = []
         for workspace in results['workspaces']:
             if not pattern or fnmatch(workspace['name'], pattern):
-                skills.append(SkillId(workspace['workspace_id'], workspace['name']))
+                skills.append(SkillTuple(workspace['workspace_id'],
+                                         workspace['name'],
+                                         workspace['updated']))
         return skills
 
     def _delete_skill(self, skill_id: str) -> bool:
@@ -55,7 +58,10 @@ class wa(object):
         return response.get_status_code() == 200
 
     def _get_skill(self, skill_id: str) -> Dict:
-        response = self.service.get_workspace(skill_id, export=True, sort='stable')
+        response = self.service.get_workspace(skill_id,
+                                              export=True,
+                                              sort='stable',
+                                              include_audit=True)
         _trace_rate_limits('get_workspace', response)
         results = response.get_result()
         return results
@@ -65,8 +71,16 @@ class wa(object):
         _trace_rate_limits('create_workspace', response)
         return response.get_status_code() == 201
 
+    def _get_cached(self, full_path: str, modified: str) -> bool:
+        if os.path.isfile(full_path):
+            with open(full_path, 'r') as json_file:
+                cached = json.load(json_file)
+                if cached['updated'] == modified:
+                    return cached
+        return None
+
     @staticmethod
-    def list_skills(apikey: str, url: str, pattern: str) -> List[SkillId]:
+    def list_skills(apikey: str, url: str, pattern: str) -> List[SkillTuple]:
         return wa(apikey, url)._list_skills(pattern)
 
     @staticmethod
@@ -78,9 +92,9 @@ class wa(object):
         service = wa(apikey, url)
         skills = service._list_skills()
         success = True
-        for (id, name) in skills:
-            click.echo(f'Deleting skill {name}-{id}...')
-            service._delete_skill(id)
+        for skill in skills:
+            click.echo(f'Deleting skill {skill.name}-{skill.id}...')
+            service._delete_skill(skill.id)
         return success
 
     @staticmethod
@@ -92,14 +106,18 @@ class wa(object):
         tgt = wa(rw_apikey, rw_url)
         skills = src._list_skills()
         success = True
-        for (id, name) in skills:
+        for (id, name, updated_on) in skills:
             if not force:
                 if not click.confirm(f'Do you want to copy the skill {id}-{name} continue?'):
                     continue
-            skill_data = src._get_skill(id)
             skills_file = os.path.join(skills_folder, f'{id}-{name}.json')
-            with open(skills_file, 'w', encoding='utf-8') as json_file:
-                json.dump(skill_data, json_file, ensure_ascii=False, indent=4)
+            skill_data = src._get_cached(skills_file, updated_on)
+            if skill_data:
+                click.echo(f'Using cache for skill {name}-{id}')
+            else:
+                skill_data = src._get_skill(id)
+                with open(skills_file, 'w', encoding='utf-8') as json_file:
+                    json.dump(skill_data, json_file, ensure_ascii=False, indent=4)
             try:
                 skill_data['description'] = f'{skill_data["description"]} - Cloned from {id}-{name}'
                 tgt._create_skill(skill_data)

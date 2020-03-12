@@ -24,7 +24,7 @@ def list_skills(apikey, url, pattern):
     """
     skills = wa.list_skills(apikey, url, pattern)
     for skill in skills:
-        click.echo(f'{skill.id} {skill.name}')
+        click.echo(f'{skill.updated_on}   {skill.id}   {skill.name}')
 
 
 @skills.command(name="delete")
