@@ -35,9 +35,11 @@ def delete_all(ctx, apikey, url):
 @common_options.add(common_options.mandatory)
 @click.option('--src_apikey',
               default=lambda: os.environ.get('WA_APIKEY_SRC', ''),
+              callback=common_options.non_empty,
               show_default="Value of WA_APIKEY_SRC", required=True)
 @click.option('--src_url',
               default=lambda: os.environ.get('WA_URL_SRC', ''),
+              callback=common_options.non_empty,
               show_default="Value of WA_URL_SRC", required=True)
 @click.option('--force', is_flag=True)
 @click.pass_context
