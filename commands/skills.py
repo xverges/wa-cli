@@ -4,15 +4,18 @@
 import click
 from .helpers import protect_readonly
 from .helpers import common_options
+from .helpers import cfg
 from .wa import wa
+from .workbench import workbench
 
 
 @click.group()
-def skills():
+@click.pass_context
+def skills(ctx):
     """
     Skill related commands
     """
-    pass
+    cfg.check_context(ctx)
 
 
 @skills.command(name="list")
@@ -37,5 +40,17 @@ def delete_skill(apikey, url, skill_id):
     """
     success = wa.delete_skill(apikey, url, skill_id)
     click.echo(f'Success: {success}')
+
+
+@skills.command()
+@click.pass_context
+@click.argument('skill_file', type=click.Path(exists=True))
+def decompose(ctx, skill_file):
+    """
+    Decompose a json skill file with WAW (Watson Assistant Workbench)
+    """
+    success = workbench.decompose_skill_file(skill_file)
+    click.echo(f'Success: {success}')
+
 
 # def router(target):

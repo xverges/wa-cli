@@ -48,4 +48,15 @@ def clone_skills(ctx, apikey, url, src_apikey, src_url, force):
     """
     Clone the skills from a service into another
     """
-    wa.clone_service(apikey, url, src_apikey, src_url, force)
+    wa.clone_service_skills(apikey, url, src_apikey, src_url, force)
+
+
+@service.command()
+@common_options.add(common_options.mandatory)
+@click.option('--force', is_flag=True)
+@click.pass_context
+def download_skills(ctx, apikey, url, force):
+    """
+    Download all the skills from a service
+    """
+    wa.download_service_skills(apikey, url, force)

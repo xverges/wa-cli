@@ -64,6 +64,22 @@ def get_project_folder() -> str:
         sys.exit(FileNotFoundError(errno.ENOENT, msg, folder))
 
 
+def skills_folder() -> str:
+
+    return os.path.join(get_project_folder(), SKILLS_FOLDER)
+
+
+def waw_target_folder() -> str:
+
+    return os.path.join(get_project_folder(), WAW_FOLDER)
+
+
+def waw_scripts_folder() -> str:
+
+    dirname = os.path.dirname
+    return os.path.join(dirname(dirname(sys.path[0])), "tools", "watson-assistant-workbench", "scripts")
+
+
 def check_context(ctx):
     folder = get_project_folder()
     if not folder:
