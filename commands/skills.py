@@ -30,6 +30,20 @@ def list_skills(apikey, url, pattern):
         click.echo(f'{skill.updated_on}   {skill.id}   {skill.name}')
 
 
+@skills.command()
+@click.pass_context
+@common_options.add(common_options.mandatory)
+@click.argument('skill_file', type=click.Path(exists=True))
+@click.option('--force', is_flag=True)
+@protect_readonly
+def deploy(ctx, apikey, url, skill_file, force):
+    """
+    Create/update a skill from a json file
+    """
+    success = wa.deploy_skill(apikey, url, skill_file, force)
+    click.echo(f'Success: {success}')
+
+
 @skills.command(name="delete")
 @common_options.add(common_options.mandatory)
 @click.argument('skill_id', required=True)

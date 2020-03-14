@@ -68,13 +68,10 @@ class wa(object):
         _trace_rate_limits('create_workspace', response)
         return response.get_status_code() == 201
 
-    def _get_cached(self, full_path: str, modified: str) -> bool:
-        if os.path.isfile(full_path):
-            with open(full_path, 'r') as json_file:
-                cached = json.load(json_file)
-                if cached['updated'] == modified:
-                    return cached
-        return None
+    def _update_skill(self, skill_data: Dict) -> bool:
+        response = self.service.update_workspace(**skill_data)
+        _trace_rate_limits('update_workspace', response)
+        return response.get_status_code() == 200
 
     def _get_skill_file(self, skill: SkillTuple) -> Tuple[str, object]:
         "Saves a skill to a file, and returns (path, data)"
@@ -90,12 +87,43 @@ class wa(object):
         return (skill_file, skill_data)
 
     @staticmethod
+    def _get_cached(full_path: str, modified: str) -> object:
+        if os.path.isfile(full_path):
+            with open(full_path, 'r') as json_file:
+                cached = json.load(json_file)
+                if cached['updated'] == modified:
+                    return cached
+        return None
+
+    @staticmethod
     def list_skills(apikey: str, url: str, pattern: str) -> List[SkillTuple]:
         return wa(apikey, url)._list_skills(pattern)
 
     @staticmethod
     def delete_skill(apikey: str, url: str, skill_id: str) -> bool:
         return wa(apikey, url)._delete_skill(skill_id)
+
+    @staticmethod
+    def deploy_skill(apikey: str, url: str, skill_file: str, force: bool) -> bool:
+        service = wa(apikey, url)
+        skills = service._list_skills()
+        with open(skill_file, 'r') as json_file:
+            new_skill = json.load(json_file)
+        name = new_skill['name']
+        matching = [skill for skill in skills if skill.name == name]
+        if len(matching) and not force:
+            if not click.confirm(f'Do you want to overwrite the skill {matching[0].id}-{name} continue?',
+                                 abort=True):
+                return False
+        new_skill.pop('created', None)
+        new_skill.pop('status', None)
+        new_skill.pop('updated', None)
+        if len(matching):
+            success = service._update_skill(new_skill)
+        else:
+            new_skill.pop('workspace_id', None)
+            success = service._create_skill(new_skill)
+        return success
 
     @staticmethod
     def delete_all_skills(apikey: str, url: str) -> bool:
