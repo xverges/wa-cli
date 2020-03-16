@@ -67,4 +67,16 @@ def decompose(ctx, skill_file):
     click.echo(f'Success: {success}')
 
 
+@skills.command()
+@click.pass_context
+@click.argument('skill_name', type=click.STRING, required=True)
+@click.argument('new_name', type=click.STRING, required=False)
+@click.option('--force', is_flag=True)
+def assemble(ctx, skill_name, new_name, force):
+    """
+    Re-assemble WAW-files into a json skill file
+    """
+    success = workbench.reassemble_skill_file(skill_name, new_name, force)
+    click.echo(f'Success: {success}')
+
 # def router(target):
