@@ -134,7 +134,15 @@ def update_env_contents(existing_lines: list,
 
 
 def update_gitignore_contents(existing_lines: list) -> list:
-    for entry in ['/.env', f'/{WACLI_FOLDER}']:
+    entries = [
+        '/.env',
+        '/.wa-cli',
+        '/waw/re-assembled',
+        'wa-json',
+        'log.log',
+        '.DS_Store'
+    ]
+    for entry in entries:
         if not any([(line.strip() == entry) for line in existing_lines]):
             existing_lines.append(entry)
     return existing_lines
