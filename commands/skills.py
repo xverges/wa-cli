@@ -6,6 +6,7 @@ from .helpers import protect_readonly
 from .helpers import common_options
 from .helpers import cfg
 from .wa import wa
+from .wa_testing import wa_testing
 from .workbench import workbench
 
 
@@ -78,5 +79,28 @@ def assemble(ctx, skill_name, new_name, force):
     """
     success = workbench.reassemble_skill_file(skill_name, new_name, force)
     click.echo(f'Success: {success}')
+
+
+@click.group()
+def test():
+    """
+    Test related commands
+    """
+
+
+@test.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_file', type=click.Path(exists=True))
+@click.option('--folds', default=5, show_default=True)
+@click.option('--show-graphics', is_flag=True, help='Open a browser with the generated images')
+def k_fold(apikey, url, skill_file, folds, show_graphics):
+    """
+    k-fold test to measure ground truth consistency
+    """
+    wa_testing.k_fold(apikey, url, skill_file, folds, show_graphics)
+
+
+skills.add_command(test)
+
 
 # def router(target):

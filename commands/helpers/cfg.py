@@ -1,5 +1,6 @@
 
 import errno
+import inspect
 import os
 import sys
 
@@ -8,6 +9,7 @@ import click
 
 WACLI_FOLDER = '.wa-cli'
 SKILLS_FOLDER = 'skills'
+TEST_FOLDER = 'test'
 WAW_FOLDER = 'waw'
 READONLY_SERVICES = 'readonly_services.txt'
 
@@ -37,7 +39,7 @@ def init(apikey: str,
     contents = update_gitignore_contents(contents)
     update_contents(cfg_file, contents)
 
-    for folder in [WACLI_FOLDER, SKILLS_FOLDER, WAW_FOLDER]:
+    for folder in [WACLI_FOLDER, SKILLS_FOLDER, TEST_FOLDER, WAW_FOLDER]:
         if not os.path.isdir(folder):
             os.mkdir(folder)
 
@@ -69,6 +71,16 @@ def skills_folder() -> str:
     return os.path.join(get_project_folder(), SKILLS_FOLDER)
 
 
+def test_folder() -> str:
+
+    return os.path.join(get_project_folder(), TEST_FOLDER)
+
+
+def test_scripts_folder() -> str:
+
+    return os.path.join(os.path.dirname(sys.path[0]), "WA-Testing-Tool")
+
+
 def waw_target_folder() -> str:
 
     return os.path.join(get_project_folder(), WAW_FOLDER)
@@ -76,8 +88,7 @@ def waw_target_folder() -> str:
 
 def waw_scripts_folder() -> str:
 
-    dirname = os.path.dirname
-    return os.path.join(dirname(dirname(sys.path[0])), "tools", "watson-assistant-workbench", "scripts")
+    return os.path.join(os.path.dirname(sys.path[0]), "watson-assistant-workbench", "scripts")
 
 
 def check_context(ctx):
@@ -134,14 +145,18 @@ def update_env_contents(existing_lines: list,
 
 
 def update_gitignore_contents(existing_lines: list) -> list:
-    entries = [
-        '/.env',
-        '/.wa-cli',
-        '/waw/re-assembled',
-        'wa-json',
-        'log.log',
-        '.DS_Store'
-    ]
+    entries = """
+    /.env
+    /.wa-cli
+    /waw/re-assembled
+    /test/*/data/kfold/*
+    /test/*/data/workspace_base.json
+    /test/*/data/*-train.csv
+    wa-json
+    log.log
+    .DS_Store
+    """
+    entries = [entry for entry in inspect.cleandoc(entries).splitlines() if entry.strip()]
     for entry in entries:
         if not any([(line.strip() == entry) for line in existing_lines]):
             existing_lines.append(entry)
