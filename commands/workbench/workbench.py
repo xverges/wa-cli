@@ -1,7 +1,9 @@
 
 from collections import OrderedDict
+from glob import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 from typing import List
@@ -17,9 +19,12 @@ class workbench(object):
 
     @classmethod
     def _make_decompose_folders(cls, skill_name: str):
+        skill_folder = os.path.join(cls._root, skill_name)
+        if os.path.isdir(skill_folder):
+            shutil.rmtree(skill_folder, ignore_errors=True)
         names = ['wa_json', 'counterexamples', 'intents', 'entities', 'dialog']
         for name in names:
-            os.makedirs(os.path.join(cls._root, skill_name, name), exist_ok=True)
+            os.makedirs(os.path.join(skill_folder, name), exist_ok=True)
 
     @classmethod
     def _make_reassemble_folder(cls, skill_name: str) -> str:
@@ -162,6 +167,9 @@ class workbench(object):
 
     @classmethod
     def decompose_skill_file(cls, full_path: str) -> bool:
+        """
+        Decompose a skill with WAW. Use the internal name as the target folder
+        """
         full_path = os.path.abspath(full_path)
         meta = cls._get_skill_meta(full_path)
         skill_name = meta['name']
@@ -171,6 +179,21 @@ class workbench(object):
         cls._to_csv_entities(skill_name)
         cls._to_xml_dialog(skill_name)
         return True
+
+    @classmethod
+    def decompose_all_skill_files(cls, force) -> bool:
+        pattern = os.path.join(cfg.skills_folder(), '*.json')
+        for file_path in glob(pattern):
+            if not force:
+                dir_name = cls._get_skill_meta(file_path)['name']
+                dir_name = os.path.join(cfg.WAW_FOLDER, dir_name)
+                file_name = os.path.basename(file_path)
+                if not click.confirm(f'\nDo you want to use Watson Assistant Workbench\n'
+                                     f'to decompose file "{file_name}"\n'
+                                     f'into folder "{dir_name}"?',
+                                     default=True):
+                    continue
+            cls.decompose_skill_file(file_path)
 
     @classmethod
     def reassemble_skill_file(cls,
@@ -194,7 +217,3 @@ class workbench(object):
         cls._reassemble_intents(skill_name, tgt_folder)
         cls._reassemble_reassembled_json_files(skill_name, tgt_folder)
         return True
-
-    @classmethod
-    def decompose_all(cls, apikey: str, url: str) -> bool:
-        pass

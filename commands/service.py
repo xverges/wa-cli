@@ -8,6 +8,7 @@ from .helpers import protect_readonly
 from .helpers import common_options
 from .helpers import cfg
 from .wa import wa
+from .workbench import workbench
 
 
 @click.group()
@@ -29,6 +30,16 @@ def delete_all(ctx, apikey, url):
     """
     success = wa.delete_all_skills(apikey, url)
     click.echo(f'Success: {success}')
+
+
+@service.command()
+@click.option('--force', is_flag=True)
+@click.pass_context
+def decompose(ctx, force):
+    """
+    Decompose all the files in the skills folder with WAW (Watson Assistant Workbench)
+    """
+    workbench.decompose_all_skill_files(force)
 
 
 @service.command()
