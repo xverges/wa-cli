@@ -124,6 +124,7 @@ class workbench(object):
             new_name = os.path.basename(tgt_folder)
             if skill_name != new_name:
                 meta['description'] = f'Copied from {skill_name}. {meta["description"]}'
+                skill_name = new_name
         cls._run_waw_script('workspace_compose.py', [
             '--common_outputs_directory', tgt_folder,
             '--common_outputs_workspace', 'skill.json',
@@ -166,13 +167,14 @@ class workbench(object):
             return meta
 
     @classmethod
-    def decompose_skill_file(cls, full_path: str) -> bool:
+    def decompose_skill_file(cls, full_path: str, skill_name: str = '') -> bool:
         """
-        Decompose a skill with WAW. Use the internal name as the target folder
+        Decompose a skill with WAW. Use the internal name as the target folder, or the one supplied.
         """
         full_path = os.path.abspath(full_path)
         meta = cls._get_skill_meta(full_path)
-        skill_name = meta['name']
+        if not skill_name:
+            skill_name = meta['name']
         cls._make_decompose_folders(skill_name)
         cls._to_smaller_json_files(full_path, skill_name, meta)
         cls._to_csv_intents(skill_name)
@@ -199,7 +201,7 @@ class workbench(object):
     def reassemble_skill_file(cls,
                               skill_name: str,
                               new_name: str = '',
-                              force: bool = False) -> bool:
+                              force: bool = False) -> str:
         """
         Assemble the waw/{skill_name}/* files into waw/re-assembled/{new_name}/skill.json
         """
@@ -216,4 +218,4 @@ class workbench(object):
         cls._reassemble_entities(skill_name, tgt_folder)
         cls._reassemble_intents(skill_name, tgt_folder)
         cls._reassemble_reassembled_json_files(skill_name, tgt_folder)
-        return True
+        return tgt_file

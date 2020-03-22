@@ -61,6 +61,7 @@ class wa(object):
                                               include_audit=True)
         _trace_rate_limits('get_workspace', response)
         results = response.get_result()
+        results = self._audit_cleanup(results)
         return results
 
     def _create_skill(self, skill_data: Dict) -> bool:
@@ -86,6 +87,33 @@ class wa(object):
                 json.dump(skill_data, json_file, ensure_ascii=False, indent=4)
         return (skill_file, skill_data)
 
+    def _get_skill_tuple(self, skill_name: str, log_errors: bool = True) -> SkillTuple:
+        skills = self._list_skills()
+        matching = [skill for skill in skills if skill.name == skill_name]
+        if len(matching) == 1:
+            return matching[0]
+        else:
+            if log_errors:
+                if len(matching) == 0:
+                    click.secho(f'No skill matching "{skill_name}"', fg='white', bg='red')
+                else:
+                    click.secho(f'{len(matching)} skills matching "{skill_name}"', fg='white', bg='red')
+            return None
+
+    @staticmethod
+    def _audit_cleanup(skill_data: Dict) -> Dict:
+        "Remove the second level created/updated attributes"
+        def _remove_audit(obj):
+            if isinstance(obj, dict):
+                obj.pop('created', None)
+                obj.pop('updated', None)
+                for key, value in obj.items():
+                    obj[key] = _remove_audit(value)
+            elif isinstance(obj, list):
+                obj = [_remove_audit(value) for value in obj]
+            return obj
+        return {key: _remove_audit(value) for key, value in skill_data.items()}
+
     @staticmethod
     def _get_cached(full_path: str, modified: str) -> object:
         if os.path.isfile(full_path):
@@ -100,8 +128,29 @@ class wa(object):
         return wa(apikey, url)._list_skills(pattern)
 
     @staticmethod
-    def delete_skill(apikey: str, url: str, skill_id: str) -> bool:
-        return wa(apikey, url)._delete_skill(skill_id)
+    def delete_skill(apikey: str, url: str, skill_id: str = '', name: str = '') -> bool:
+        "Delete a skill by id or name"
+        if not skill_id and not name:
+            raise ValueError('Specify one of skill_id or name')
+        service = wa(apikey, url)
+        if not skill_id:
+            skill_tuple = service._get_skill_tuple(name, log_errors=True)
+            if skill_tuple:
+                skill_id = skill_tuple.id
+        if skill_id:
+            return service._delete_skill(skill_id)
+        else:
+            return False
+
+    @staticmethod
+    def get_skill(apikey: str, url: str, skill_name: str) -> str:
+        "Get a skill from WA or our cache and return its path"
+        service = wa(apikey, url)
+        skill_tuple = service._get_skill_tuple(skill_name, log_errors=True)
+        if skill_tuple:
+            return service._get_skill_file(skill_tuple)[0]
+        else:
+            return ''
 
     @staticmethod
     def deploy_skill(apikey: str, url: str, skill_file: str, force: bool) -> bool:
@@ -119,6 +168,7 @@ class wa(object):
         new_skill.pop('status', None)
         new_skill.pop('updated', None)
         if len(matching):
+            new_skill['workspace_id'] = matching[0].id
             success = service._update_skill(new_skill)
         else:
             new_skill.pop('workspace_id', None)

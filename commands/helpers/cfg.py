@@ -12,12 +12,14 @@ SKILLS_FOLDER = 'skills'
 TEST_FOLDER = 'test'
 WAW_FOLDER = 'waw'
 READONLY_SERVICES = 'readonly_services.txt'
+MAIN_BRANCH = 'main_branch.txt'
 
 
 def init(apikey: str,
          url: str,
          apikey_src: str,
-         url_src: str) -> None:
+         url_src: str,
+         main_branch: str) -> None:
 
     def current_contents(file_name):
         if os.path.isfile(file_name):
@@ -50,20 +52,27 @@ def init(apikey: str,
             contents.append(apikey_src)
     update_contents(cfg_file, contents)
 
+    cfg_file = _main_branch_file()
+    with open(cfg_file, 'w') as _file:
+        _file.write(main_branch)
+
+
+_cache = {'project_folder': ''}
+
 
 def get_project_folder() -> str:
-    current_folder = os.getcwd()
-    while True:
-        if os.path.isdir(os.path.join(current_folder, WACLI_FOLDER)):
-            return current_folder
-        parent_folder = os.path.dirname(current_folder)
-        if parent_folder != current_folder:
-            current_folder = parent_folder
-            continue
-        return ''
-        msg = "This is not a wa-cli project. You'll need to run wa-cli init."
-        folder = os.path.join(os.getcwd(), WACLI_FOLDER)
-        sys.exit(FileNotFoundError(errno.ENOENT, msg, folder))
+    if not _cache['project_folder']:
+        current_folder = os.getcwd()
+        while True:
+            if os.path.isdir(os.path.join(current_folder, WACLI_FOLDER)):
+                _cache['project_folder'] = current_folder
+                break
+            parent_folder = os.path.dirname(current_folder)
+            if parent_folder != current_folder:
+                current_folder = parent_folder
+                continue
+            break
+    return _cache['project_folder']
 
 
 def skills_folder() -> str:
@@ -91,6 +100,18 @@ def waw_scripts_folder() -> str:
     return os.path.join(os.path.dirname(sys.path[0]), "watson-assistant-workbench", "scripts")
 
 
+def _main_branch_file() -> str:
+    folder = get_project_folder()
+    return os.path.join(folder, WACLI_FOLDER, MAIN_BRANCH)
+
+
+def main_branch() -> str:
+    with open(_main_branch_file(), 'r') as _file:
+        for line in _file.readlines():
+            if line and not line.startswith('#'):
+                return line.strip()
+
+
 def check_context(ctx):
     folder = get_project_folder()
     if not folder:
@@ -101,6 +122,17 @@ def check_context(ctx):
 
     ctx.ensure_object(dict)
     ctx.obj['project_folder'] = folder
+    os.chdir(folder)
+
+    branch_file = _main_branch_file()
+    if not os.path.isfile(branch_file):
+        msg = f"The {WACLI_FOLDER} folder is missing the {MAIN_BRANCH} file. You'll need to run wa-cli init."
+        click.secho(msg, fg='white', bg='red')
+        sys.exit(FileNotFoundError(errno.ENOENT, msg, branch_file))
+    if not main_branch():
+        msg = f"Wrong contents in {branch_file}. You'll need to run wa-cli init."
+        click.secho(msg, fg='white', bg='red')
+        sys.exit(1)
 
 
 def update_env_contents(existing_lines: list,
@@ -147,7 +179,7 @@ def update_env_contents(existing_lines: list,
 def update_gitignore_contents(existing_lines: list) -> list:
     entries = """
     /.env
-    /.wa-cli
+    /.wa-cli/readonly_services.txt
     /waw/re-assembled
     /test/*/data/kfold/*
     /test/*/data/workspace_base.json
