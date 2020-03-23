@@ -6,7 +6,7 @@ import click
 
 from .commands.sandbox import sandbox
 from .commands.service import service
-from .commands.skills import skills
+from .commands.skill import skill
 
 
 @click.group()
@@ -19,7 +19,7 @@ def init():
     """
     Initialise the current folder for further work with wa-cli
     """
-    from commands.helpers.cfg import init
+    from .commands.helpers.cfg import init
     click.confirm('This will initialise the current folder as a wa-cli project. Continue?',
                   abort=True,
                   default=True)
@@ -36,7 +36,7 @@ def init():
 
 entry_point.add_command(sandbox)
 entry_point.add_command(service)
-entry_point.add_command(skills)
+entry_point.add_command(skill)
 
 if __name__ == "__main__":
     entry_point()

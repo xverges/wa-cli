@@ -12,14 +12,14 @@ from .workbench import workbench
 
 @click.group()
 @click.pass_context
-def skills(ctx):
+def skill(ctx):
     """
     Skill related commands
     """
     cfg.check_context(ctx)
 
 
-@skills.command(name="list")
+@skill.command(name="list")
 @common_options.add(common_options.mandatory)
 @click.argument('pattern', default='*')
 def list_skills(apikey, url, pattern):
@@ -31,7 +31,7 @@ def list_skills(apikey, url, pattern):
         click.echo(f'{skill.updated_on}   {skill.id}   {skill.name}')
 
 
-@skills.command()
+@skill.command()
 @click.pass_context
 @common_options.add(common_options.mandatory)
 @click.argument('skill_file', type=click.Path(exists=True))
@@ -45,7 +45,7 @@ def deploy(ctx, apikey, url, skill_file, force):
     click.echo(f'Success: {success}')
 
 
-@skills.command(name="delete")
+@skill.command(name="delete")
 @common_options.add(common_options.mandatory)
 @click.argument('skill_id', required=True)
 @protect_readonly
@@ -57,7 +57,7 @@ def delete_skill(apikey, url, skill_id):
     click.echo(f'Success: {success}')
 
 
-@skills.command()
+@skill.command()
 @click.pass_context
 @click.argument('skill_file', type=click.Path(exists=True))
 def decompose(ctx, skill_file):
@@ -68,7 +68,7 @@ def decompose(ctx, skill_file):
     click.echo(f'Success: {success}')
 
 
-@skills.command()
+@skill.command()
 @click.pass_context
 @click.argument('skill_name', type=click.STRING, required=True)
 @click.argument('new_name', type=click.STRING, required=False)
@@ -100,7 +100,7 @@ def k_fold(apikey, url, skill_file, folds, show_graphics):
     wa_testing.k_fold(apikey, url, skill_file, folds, show_graphics)
 
 
-skills.add_command(test)
+skill.add_command(test)
 
 
 # def router(target):
