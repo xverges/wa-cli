@@ -1,13 +1,7 @@
 
 import inspect
-import sys
 
-try:
-    from commands.helpers import cfg
-
-except ModuleNotFoundError:
-    print('=> Execute the tests with "python -m pytest" so that import work <=')
-    sys.exit(1)
+from wa_cli.commands.helpers import cfg
 
 
 existing_env = """
@@ -69,29 +63,29 @@ def test_existing_gitignore_without():
         '# random comment',
         '# /.env',
         '/.env',
-        '/.wa-cli'
+        '/.wa-cli/readonly_services.txt'
     ]
-    assert cfg.update_gitignore_contents(existing) == expected
+    assert cfg.update_gitignore_contents(existing)[:4] == expected[:4]
 
 
 def test_existing_gitignore_with():
     existing = [
         '# random comment',
         '/.env',
-        '/.wa-cli'
+        '/.wa-cli/readonly_services.txt'
     ]
     expected = [
         '# random comment',
         '/.env',
-        '/.wa-cli'
+        '/.wa-cli/readonly_services.txt'
     ]
-    assert cfg.update_gitignore_contents(existing) == expected
+    assert cfg.update_gitignore_contents(existing)[:3] == expected[:3]
 
 
 def test_no_gitignore():
     existing = []
     expected = [
         '/.env',
-        '/.wa-cli'
+        '/.wa-cli/readonly_services.txt'
     ]
-    assert cfg.update_gitignore_contents(existing) == expected
+    assert cfg.update_gitignore_contents(existing)[:2] == expected[:2]

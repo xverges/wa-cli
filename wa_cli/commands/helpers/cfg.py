@@ -8,6 +8,7 @@ import click
 
 
 WACLI_FOLDER = '.wa-cli'
+WACLI_CFG = 'wa-cli.cfg'
 SKILLS_FOLDER = 'skills'
 TEST_FOLDER = 'test'
 WAW_FOLDER = 'waw'
@@ -57,7 +58,9 @@ def init(apikey: str,
         _file.write(main_branch)
 
 
-_cache = {'project_folder': ''}
+_cache = {'project_folder': '',
+          'code_folder': '',
+          'cfg': {}}
 
 
 def get_project_folder() -> str:
@@ -75,6 +78,27 @@ def get_project_folder() -> str:
     return _cache['project_folder']
 
 
+def get_code_folder() -> str:
+    if not _cache['code_folder']:
+        for folder in sys.path:
+            if os.path.isfile(os.path.join(folder, WACLI_CFG)):
+                _cache['code_folder'] = folder
+                break
+    return _cache['code_folder']
+
+
+def get_cfg_value(key: str) -> str:
+    if not _cache['cfg']:
+        cfg_path = os.path.join(get_code_folder(), WACLI_CFG)
+        with open(cfg_path, 'r') as cfg_file:
+            for line in cfg_file:
+                line = line.strip()
+                if line and '=' in line:
+                    k, v = tuple([fragment.strip() for fragment in line.split('=')])
+                    _cache['cfg'][k] = v
+    return _cache['cfg'][key]
+
+
 def skills_folder() -> str:
 
     return os.path.join(get_project_folder(), SKILLS_FOLDER)
@@ -87,7 +111,7 @@ def test_folder() -> str:
 
 def test_scripts_folder() -> str:
 
-    return os.path.join(os.path.dirname(sys.path[0]), "WA-Testing-Tool")
+    return get_cfg_value('WA_TEST_TOOL_PATH')
 
 
 def waw_target_folder() -> str:
@@ -97,7 +121,7 @@ def waw_target_folder() -> str:
 
 def waw_scripts_folder() -> str:
 
-    return os.path.join(os.path.dirname(sys.path[0]), "watson-assistant-workbench", "scripts")
+    return os.path.join(get_cfg_value('WAW_PATH'), "scripts")
 
 
 def _main_branch_file() -> str:
@@ -184,11 +208,12 @@ def update_gitignore_contents(existing_lines: list) -> list:
     /test/*/data/kfold/*
     /test/*/data/workspace_base.json
     /test/*/data/*-train.csv
-    wa-json
+    wa_json
     log.log
     .DS_Store
     """
     entries = [entry for entry in inspect.cleandoc(entries).splitlines() if entry.strip()]
+    entries.append('')  # append a blank line
     for entry in entries:
         if not any([(line.strip() == entry) for line in existing_lines]):
             existing_lines.append(entry)

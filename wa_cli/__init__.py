@@ -4,9 +4,9 @@
 import click
 
 
-from commands.sandbox import sandbox
-from commands.service import service
-from commands.skills import skills
+from .commands.sandbox import sandbox
+from .commands.service import service
+from .commands.skills import skills
 
 
 @click.group()
