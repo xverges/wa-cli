@@ -81,6 +81,21 @@ def assemble(ctx, skill_name, new_name, force):
     click.echo(f'Success: {success}')
 
 
+@skill.command()
+@click.pass_context
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+def get(ctx, apikey, url, skill_name):
+    """
+    Download a skill to the skills folder
+    """
+    skill_file = wa.get_skill(apikey, url, skill_name)
+    if skill_file:
+        click.echo(f'Downloaded to: {skill_file}')
+    else:
+        click.echo('Command failed')
+
+
 @click.group()
 def test():
     """
