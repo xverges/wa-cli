@@ -14,7 +14,20 @@ existing_env = """
                WA_URL_SRC=old_4"""
 
 
+def env_vars(apikey: str,
+             url: str,
+             apikey_src: str,
+             url_src: str):
+    return {
+        'WA_APIKEY': apikey,
+        'WA_URL': url,
+        'WA_APIKEY_SRC': apikey_src,
+        'WA_URL_SRC': url_src
+    }
+
+
 def test_empty_file_all_params():
+    header = '# set -o allexport; source .env; set +o allexport'
     expected = [
         '# set -o allexport; source .env; set +o allexport',
         'WA_APIKEY=1',
@@ -22,10 +35,11 @@ def test_empty_file_all_params():
         'WA_APIKEY_SRC=3',
         'WA_URL_SRC=4'
     ]
-    assert cfg.update_env_contents([], '1', '2', '3', '4') == expected
+    assert cfg.update_env_contents([], env_vars('1', '2', '3', '4'), header) == expected
 
 
 def test_empty_file_one_missing_param():
+    header = '# set -o allexport; source .env; set +o allexport'
     expected = [
         '# set -o allexport; source .env; set +o allexport',
         'WA_APIKEY=1',
@@ -33,10 +47,11 @@ def test_empty_file_one_missing_param():
         'WA_APIKEY_SRC=',
         'WA_URL_SRC=4'
     ]
-    assert cfg.update_env_contents([], '1', '2', '', '4') == expected
+    assert cfg.update_env_contents([], env_vars('1', '2', '', '4'), header) == expected
 
 
 def test_existing_cfg_file():
+    header = '# set -o allexport; source .env; set +o allexport'
     expected = [
         '# set -o allexport; source .env; set +o allexport',
         '# WA_APIKEY=old_1',
@@ -51,7 +66,7 @@ def test_existing_cfg_file():
         'WA_URL_SRC=4'
     ]
     input_lines = inspect.cleandoc(existing_env).split('\n')
-    assert cfg.update_env_contents(input_lines, '1', '2', '', '4') == expected
+    assert cfg.update_env_contents(input_lines, env_vars('1', '2', '', '4'), header) == expected
 
 
 def test_existing_gitignore_without():

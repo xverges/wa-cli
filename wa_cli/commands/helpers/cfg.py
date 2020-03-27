@@ -2,6 +2,7 @@
 import errno
 import inspect
 import os
+import subprocess
 import sys
 
 import click
@@ -15,6 +16,9 @@ WAW_FOLDER = 'waw'
 READONLY_SERVICES = 'readonly_services.txt'
 MAIN_BRANCH = 'main_branch.txt'
 
+GIT_WAW = ('https://github.com/xverges/watson-assistant-workbench.git', '854a11e')
+GIT_WTT = ('https://github.com/cognitive-catalyst/WA-Testing-Tool.git', 'fe28739')
+
 
 def init(apikey: str,
          url: str,
@@ -22,36 +26,35 @@ def init(apikey: str,
          url_src: str,
          main_branch: str) -> None:
 
-    def current_contents(file_name):
-        if os.path.isfile(file_name):
-            with open(file_name, 'r') as _file:
-                return [line.strip() for line in _file.readlines()]
-        return []
-
-    def update_contents(file_name, contents):
-        with open(file_name, 'w') as _file:
-            _file.write("\n".join(contents))
+    check_dependencies()
 
     cfg_file = '.env'
-    contents = current_contents(cfg_file)
-    contents = update_env_contents(contents, apikey, url, apikey_src, url_src)
-    update_contents(cfg_file, contents)
+    contents = read_file_contents(cfg_file)
+    header = '# set -o allexport; source .env; set +o allexport'
+    vars = {
+        'WA_APIKEY': apikey,
+        'WA_URL': url,
+        'WA_APIKEY_SRC': apikey_src,
+        'WA_URL_SRC': url_src
+    }
+    contents = update_env_contents(contents, vars, header)
+    write_file_contents(cfg_file, contents)
 
     cfg_file = '.gitignore'
-    contents = current_contents(cfg_file)
+    contents = read_file_contents(cfg_file)
     contents = update_gitignore_contents(contents)
-    update_contents(cfg_file, contents)
+    write_file_contents(cfg_file, contents)
 
     for folder in [WACLI_FOLDER, SKILLS_FOLDER, TEST_FOLDER, WAW_FOLDER]:
         if not os.path.isdir(folder):
             os.mkdir(folder)
 
     cfg_file = os.path.join(WACLI_FOLDER, READONLY_SERVICES)
-    contents = current_contents(cfg_file)
+    contents = read_file_contents(cfg_file)
     if apikey_src:
         if not any([x == apikey_src for x in contents]):
             contents.append(apikey_src)
-    update_contents(cfg_file, contents)
+    write_file_contents(cfg_file, contents)
 
     cfg_file = _main_branch_file()
     with open(cfg_file, 'w') as _file:
@@ -61,6 +64,18 @@ def init(apikey: str,
 _cache = {'project_folder': '',
           'code_folder': '',
           'cfg': {}}
+
+
+def read_file_contents(file_name):
+    if os.path.isfile(file_name):
+        with open(file_name, 'r') as _file:
+            return [line.strip() for line in _file.readlines()]
+    return []
+
+
+def write_file_contents(file_name, contents):
+    with open(file_name, 'w') as _file:
+        _file.write("\n".join(contents))
 
 
 def get_project_folder() -> str:
@@ -87,16 +102,19 @@ def get_code_folder() -> str:
     return _cache['code_folder']
 
 
+def get_common_cfg_file() -> str:
+    return os.path.join(get_code_folder(), WACLI_CFG)
+
+
 def get_cfg_value(key: str) -> str:
     if not _cache['cfg']:
-        cfg_path = os.path.join(get_code_folder(), WACLI_CFG)
-        with open(cfg_path, 'r') as cfg_file:
+        with open(get_common_cfg_file(), 'r') as cfg_file:
             for line in cfg_file:
                 line = line.strip()
-                if line and '=' in line:
+                if not line.startswith('#') and '=' in line:
                     k, v = tuple([fragment.strip() for fragment in line.split('=')])
                     _cache['cfg'][k] = v
-    return _cache['cfg'][key]
+    return _cache['cfg'].get(key, '')
 
 
 def skills_folder() -> str:
@@ -160,17 +178,8 @@ def check_context(ctx):
 
 
 def update_env_contents(existing_lines: list,
-                        apikey: str,
-                        url: str,
-                        apikey_src: str,
-                        url_src) -> list:
-    header = '# set -o allexport; source .env; set +o allexport'
-    vars = {
-        'WA_APIKEY': apikey,
-        'WA_URL': url,
-        'WA_APIKEY_SRC': apikey_src,
-        'WA_URL_SRC': url_src
-    }
+                        vars: dict,
+                        header: str) -> list:
     new_lines = []
 
     def append(var_name, value):
@@ -178,7 +187,7 @@ def update_env_contents(existing_lines: list,
         line = f'{var_name}={value}'
         new_lines.append(line)
 
-    if not any([x == header for x in existing_lines]):
+    if header and not any([x == header for x in existing_lines]):
         new_lines.append(header)
     for existing in existing_lines:
         replaced = False
@@ -218,3 +227,42 @@ def update_gitignore_contents(existing_lines: list) -> list:
         if not any([(line.strip() == entry) for line in existing_lines]):
             existing_lines.append(entry)
     return existing_lines
+
+
+def check_dependencies():
+
+    def download_repo(repo_url, sha, folder_name, base_folder):
+        full_path = os.path.join(base_folder, folder_name)
+        if not os.path.isdir(full_path):
+            click.echo(f'Cloning {repo_url}...')
+            command = ['git', 'clone',  repo_url, folder_name]
+            subprocess.check_call(command,
+                                  cwd=base_folder,
+                                  stderr=subprocess.DEVNULL,
+                                  stdout=subprocess.DEVNULL)
+        command = ['git', 'checkout', sha]
+        subprocess.check_call(command,
+                              cwd=full_path,
+                              stderr=subprocess.DEVNULL,
+                              stdout=subprocess.DEVNULL)
+        return full_path
+
+    waw_path = get_cfg_value('WAW_PATH')
+    waw_test_tool_path = get_cfg_value('WA_TEST_TOOL_PATH')
+    update_cfg = not os.path.isdir(waw_path) or not os.path.isdir(waw_test_tool_path)
+
+    base_folder = os.path.join(get_code_folder(), 'tools')
+    os.makedirs(base_folder, exist_ok=True)
+    waw_path = download_repo(GIT_WAW[0], GIT_WAW[1], 'watson-assistant-workbench', base_folder)
+    waw_test_tool_path = download_repo(GIT_WTT[0], GIT_WTT[1], 'WA-Testing-Tool', base_folder)
+
+    if update_cfg:
+        vars = {
+            'WAW_PATH': waw_path,
+            'WA_TEST_TOOL_PATH': waw_test_tool_path
+        }
+        cfg_file = get_common_cfg_file()
+        cfg_contents = read_file_contents(cfg_file)
+        cfg_contents = update_env_contents(cfg_contents, vars, '')
+        write_file_contents(cfg_file, cfg_contents)
+        click.echo('\n')
