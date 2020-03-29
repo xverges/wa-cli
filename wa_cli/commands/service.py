@@ -15,7 +15,7 @@ from .workbench import workbench
 @click.pass_context
 def service(ctx):
     """
-    Service related commands
+    Bulk actions on all the skills of a Watson Assistant instance
     """
     cfg.check_context(ctx)
 

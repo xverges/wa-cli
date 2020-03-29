@@ -18,9 +18,10 @@ from .workbench import workbench
 @click.pass_context
 def sandbox(ctx):
     """
-    Work with skills in a branch-dependant sandbox
+    Work with skills in a branch-dependant sandbox.
 
     \b
+    Sample workflow:
     $ git checkout master
     $ wa-cli sandbox init your_skill
     $ git checkout -b topic_branch
