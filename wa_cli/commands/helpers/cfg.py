@@ -16,21 +16,26 @@ WAW_FOLDER = 'waw'
 READONLY_SERVICES = 'readonly_services.txt'
 MAIN_BRANCH = 'main_branch.txt'
 
-GIT_WAW = ('https://github.com/xverges/watson-assistant-workbench.git', '854a11e')
+GIT_WAW = ('https://github.com/xverges/watson-assistant-workbench.git', 'bfec75f')
 GIT_WTT = ('https://github.com/cognitive-catalyst/WA-Testing-Tool.git', 'fe28739')
 
+_cache = {'project_folder': '',
+          'code_folder': '',
+          'cfg': {}}
 
-def init(apikey: str,
-         url: str,
-         apikey_src: str,
-         url_src: str,
-         main_branch: str) -> None:
 
-    check_dependencies()
+def init():
+
+    click.confirm('This will initialise the current folder as a wa-cli project. Continue?',
+                  abort=True,
+                  default=True)
+    _check_dependencies()
+
+    apikey, url, apikey_src, url_src, main_branch = _init_prompt()
 
     cfg_file = '.env'
     contents = read_file_contents(cfg_file)
-    header = '# set -o allexport; source .env; set +o allexport'
+    header = '# set -o allexport; source .env; set +o allexport; ' + shell_completion()
     vars = {
         'WA_APIKEY': apikey,
         'WA_URL': url,
@@ -60,10 +65,20 @@ def init(apikey: str,
     with open(cfg_file, 'w') as _file:
         _file.write(main_branch)
 
+    click.echo('The values you have supplied have been added to a .env file')
+    click.echo('You can set them as environment variables\n'
+               'enable command completion by running \n'
+               '   ' + header[2:] + '\n'
+               'You don''t need to remember this because it is written a the top of the .env file')
 
-_cache = {'project_folder': '',
-          'code_folder': '',
-          'cfg': {}}
+
+def _init_prompt():
+    apikey = click.prompt('Enter the apikey of the service that you are going to be targeting', '')
+    url = click.prompt('Enter the url of the service that you are going to be targeting', '')
+    apikey_src = click.prompt('If you plan to clone skills from a different service, enter its apikey', '')
+    url_src = click.prompt('If you plan to clone skills from a different service, enter its url', '')
+    main_branch = click.prompt('Enter your main branch. Usually, "master"', 'master')
+    return (apikey, url, apikey_src, url_src, main_branch)
 
 
 def read_file_contents(file_name):
@@ -76,6 +91,15 @@ def read_file_contents(file_name):
 def write_file_contents(file_name, contents):
     with open(file_name, 'w') as _file:
         _file.write("\n".join(contents))
+
+
+def shell_completion():
+    source = 'source_bash'
+    if 'FISH_VERSION' in os.environ:
+        source = 'source_fish'
+    elif 'ZSH_VERSION' in os.environ:
+        source = 'source_zsh'
+    return 'eval "$(_WA_CLI_COMPLETE=' + source + ' wa-cli)"'
 
 
 def get_project_folder() -> str:
@@ -229,7 +253,7 @@ def update_gitignore_contents(existing_lines: list) -> list:
     return existing_lines
 
 
-def check_dependencies():
+def _check_dependencies():
 
     def download_repo(repo_url, sha, folder_name, base_folder):
         full_path = os.path.join(base_folder, folder_name)
@@ -240,6 +264,11 @@ def check_dependencies():
                                   cwd=base_folder,
                                   stderr=subprocess.DEVNULL,
                                   stdout=subprocess.DEVNULL)
+        command = ['git', 'fetch']
+        subprocess.check_call(command,
+                              cwd=full_path,
+                              stderr=subprocess.DEVNULL,
+                              stdout=subprocess.DEVNULL)
         command = ['git', 'checkout', sha]
         subprocess.check_call(command,
                               cwd=full_path,
