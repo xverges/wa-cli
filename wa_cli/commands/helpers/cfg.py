@@ -35,7 +35,8 @@ def init():
 
     cfg_file = '.env'
     contents = read_file_contents(cfg_file)
-    header = '# set -o allexport; source .env; set +o allexport; ' + shell_completion()
+    env_setup = get_env_setup_line()
+    header = f'# {env_setup}'
     vars = {
         'WA_APIKEY': apikey,
         'WA_URL': url,
@@ -65,11 +66,17 @@ def init():
     with open(cfg_file, 'w') as _file:
         _file.write(main_branch)
 
-    click.echo('The values you have supplied have been added to a .env file')
+    click.echo('The values you have supplied have been added to the .env file')
     click.echo('You can set them as environment variables\n'
-               'enable command completion by running \n'
-               '   ' + header[2:] + '\n'
-               'You don''t need to remember this because it is written a the top of the .env file')
+               'and enable command completion by running \n\n'
+               '   ' + env_setup + '\n\n'
+               'You don''t need to remember this: run "wa-cli env" to be reminded')
+
+
+def env_help():
+    click.echo('Set the environment variables that "wa-cli init" added to the .env file\n'
+               'and enable command completion by running \n\n'
+               '   ' + get_env_setup_line() + '\n')
 
 
 def _init_prompt():
@@ -100,6 +107,10 @@ def shell_completion():
     elif 'ZSH_VERSION' in os.environ:
         source = 'source_zsh'
     return 'eval "$(_WA_CLI_COMPLETE=' + source + ' wa-cli)"'
+
+
+def get_env_setup_line():
+    return f'set -o allexport; source .env; set +o allexport; {shell_completion()}'
 
 
 def get_project_folder() -> str:
