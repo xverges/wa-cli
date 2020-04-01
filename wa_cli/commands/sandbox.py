@@ -54,6 +54,21 @@ def init(ctx, apikey, url, skill_name):
 @click.argument('skill_name', type=click.STRING, required=True, metavar='<skill_name>')
 @click.pass_context
 @protect_readonly
+def deploy(ctx, apikey, url, skill_name):
+    """
+    Reassemble a skill and deploy it
+
+    Deploys the files in <project_folder>/waw/<skill_name>. Must be executed from the
+    main git branch.
+    """
+    Sandbox(apikey, url, skill_name).deploy()
+
+
+@sandbox.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True, metavar='<skill_name>')
+@click.pass_context
+@protect_readonly
 def push(ctx, apikey, url, skill_name):
     """
     Reassemble a skill and deploy it as a sandbox
@@ -138,6 +153,14 @@ class Sandbox(object):
         self._check_skill_decomposed()
         skill_file = workbench.reassemble_skill_file(skill_name=self.skill_name,
                                                      new_name=self.sandbox_name,
+                                                     force=True)
+        wa.deploy_skill(self.apikey, self.url, skill_file, force=True)
+        click.echo('Done!')
+
+    def deploy(self):
+        self._check_current_branch(must_be_master=True)
+        self._check_skill_decomposed()
+        skill_file = workbench.reassemble_skill_file(skill_name=self.skill_name,
                                                      force=True)
         wa.deploy_skill(self.apikey, self.url, skill_file, force=True)
         click.echo('Done!')
