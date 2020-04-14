@@ -1,5 +1,5 @@
 /.env
 /.vscode
 *.egg-info
-wa-cli.cfg
-/tools
+/wa_cli/wa-cli.cfg
+/wa_cli/tools

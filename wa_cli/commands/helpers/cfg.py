@@ -131,7 +131,8 @@ def get_project_folder() -> str:
 def get_code_folder() -> str:
     if not _cache['code_folder']:
         for folder in sys.path:
-            if os.path.isfile(os.path.join(folder, 'wa_cli', '__init__.py')):
+            folder = os.path.join(folder, 'wa_cli')
+            if os.path.isfile(os.path.join(folder, '__init__.py')):
                 folder = os.path.abspath(folder)
                 _cache['code_folder'] = folder
                 break
