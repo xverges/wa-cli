@@ -131,7 +131,8 @@ def get_project_folder() -> str:
 def get_code_folder() -> str:
     if not _cache['code_folder']:
         for folder in sys.path:
-            if os.path.isfile(os.path.join(folder, WACLI_CFG)):
+            if os.path.isfile(os.path.join(folder, 'wa_cli', '__init__.py')):
+                folder = os.path.abspath(folder)
                 _cache['code_folder'] = folder
                 break
     return _cache['code_folder']
@@ -143,12 +144,14 @@ def get_common_cfg_file() -> str:
 
 def get_cfg_value(key: str) -> str:
     if not _cache['cfg']:
-        with open(get_common_cfg_file(), 'r') as cfg_file:
-            for line in cfg_file:
-                line = line.strip()
-                if not line.startswith('#') and '=' in line:
-                    k, v = tuple([fragment.strip() for fragment in line.split('=')])
-                    _cache['cfg'][k] = v
+        cfg_file_path = get_common_cfg_file()
+        if os.path.isfile(cfg_file_path):
+            with open(cfg_file_path, 'r') as cfg_file:
+                for line in cfg_file:
+                    line = line.strip()
+                    if not line.startswith('#') and '=' in line:
+                        k, v = tuple([fragment.strip() for fragment in line.split('=')])
+                        _cache['cfg'][k] = v
     return _cache['cfg'].get(key, '')
 
 
@@ -269,7 +272,7 @@ def _check_dependencies():
     def download_repo(repo_url, sha, folder_name, base_folder):
         full_path = os.path.join(base_folder, folder_name)
         if not os.path.isdir(full_path):
-            click.echo(f'Cloning {repo_url}...')
+            click.echo(f'Cloning {repo_url}... to {full_path}')
             command = ['git', 'clone',  repo_url, folder_name]
             subprocess.check_call(command,
                                   cwd=base_folder,
@@ -289,7 +292,10 @@ def _check_dependencies():
 
     waw_path = get_cfg_value('WAW_PATH')
     waw_test_tool_path = get_cfg_value('WA_TEST_TOOL_PATH')
-    update_cfg = not os.path.isdir(waw_path) or not os.path.isdir(waw_test_tool_path)
+    update_cfg = not waw_path or \
+                 not waw_test_tool_path or \
+                 not os.path.isdir(waw_path) or \
+                 not os.path.isdir(waw_test_tool_path)
 
     base_folder = os.path.join(get_code_folder(), 'tools')
     os.makedirs(base_folder, exist_ok=True)
