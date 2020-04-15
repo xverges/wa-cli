@@ -101,10 +101,11 @@ def write_file_contents(file_name, contents):
 
 
 def shell_completion():
+    shell = os.getenv('SHELL', '/bin/bash')
     source = 'source_bash'
-    if 'FISH_VERSION' in os.environ:
+    if 'fish' in shell:
         source = 'source_fish'
-    elif 'ZSH_VERSION' in os.environ:
+    elif 'zsh' in shell:
         source = 'source_zsh'
     return 'eval "$(_WA_CLI_COMPLETE=' + source + ' wa-cli)"'
 
