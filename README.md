@@ -40,7 +40,8 @@
 This has only been tested on Python 3.8.1 on OSX. I created a conda environment
 with that version running `conda env create -f environment.yml`.
 
-```
+<!-- markdownlint-disable MD014 -->
+```bash
 $ conda env create -f environment.yml
 $ conda activate wa-cli
 ```
@@ -48,15 +49,15 @@ $ conda activate wa-cli
 You can clone the repo or install directly from github. Once you have your
 virtual environment activated,
 
-**Cloning**
+* **Cloning**
 
-* Clone the repo
-* Switch to its folder
-* Run `pip install --editable .`
+  * Clone the repo
+  * Switch to its folder
+  * Run `pip install --editable .`
 
-**Direct installation**
+* Less tested alternative, **direct installation**
 
-Run `pip install https://github.com/xverges/wa-cli/archive/master.zip`
+  * Run `pip install https://github.com/xverges/wa-cli/archive/master.zip`
 
 ## Getting started
 
@@ -67,6 +68,8 @@ them as command line parameters.
 
 The `wa-cli` command provides help and command completion. Run `wa-cli env`
 to get the command that you have to execute to enable command completion
-and to set the variables that you provided when running `wa-cli init`
+and to set the variables that you provided when running `wa-cli init`. The
+specific command completion syntax depends on your default shell, as defined
+in `$SHELL`.
 
-https://github.com/xverges/wa-cli-demo demostrates the use of sanboxes
+<https://github.com/xverges/wa-cli-demo> demonstrates the use of sandboxes
