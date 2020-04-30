@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 from ..helpers import cfg
+from ..wa import  wa
 
 class TestingToolTestFiles(ABC):
 
@@ -30,8 +31,14 @@ class TestingToolTestFiles(ABC):
         pass
 
     def cleanup(self):
-        if os.path.isfile(self.cfg_path):
-            os.remove(self.cfg_path)
+        for folder in ['blind', 'kfold']:
+            tmp_folder = os.path.join(self.output_directory, folder)
+            if os.path.isdir(tmp_folder):
+                shutil.rmtree(os.path.join(self.output_directory, folder), ignore_errors=True)
+        for tmp_file in ['wa-testing-tool.ini', 'workspace_base.json', 'intent-train.csv', 'entity-train.csv']:
+            tmp_file = os.path.join(self.output_directory, tmp_file)
+            if os.path.isfile(tmp_file):
+                os.remove(tmp_file)
 
     def write_cfg(self):
         with open(self.cfg_path, 'w') as _file:
@@ -39,18 +46,20 @@ class TestingToolTestFiles(ABC):
         return self.cfg_path
 
     def graphics_as_html(self):
+        separator = '.' if self.test_type == 'kfold' else '_'
+        postfix = '_args' if self.test_type == 'kfold' else ''
         html = f"""
         <html>
             <body>
-                <h1>{self.skill_name}</h1>
+                <h1>Skill: {self.skill_name}</h1>
                 <figure>
                     <img src="./{self.test_type}.png" width="60%">
                 </figure>
                 <figure>
-                    <img src="./{self.test_type}-out.metrics.png" width="80%">
+                    <img src="./{self.test_type}-out{separator}metrics.png" width="80%">
                 </figure>
                 <figure>
-                    <img src="./{self.test_type}-out.confusion_args.png" width="80%">
+                    <img src="./{self.test_type}-out{separator}confusion{postfix}.png" width="80%">
                 </figure>
             </body>
         </html>
@@ -94,14 +103,53 @@ class KFoldTestFiles(TestingToolTestFiles):
     def cfg_contents(self):
         return self.contents
 
-    def cleanup(self):
-        super().cleanup()
-        shutil.rmtree(os.path.join(self.output_directory, 'kfold'), ignore_errors=True)
-        for tmp_file in ['workspace_base.json', 'intent-train.csv', 'entity-train.csv']:
-            tmp_file = os.path.join(self.output_directory, tmp_file)
-            if os.path.isfile(tmp_file):
-                os.remove(tmp_file)
 
+class BlindTestFiles(TestingToolTestFiles):
+
+    template = """
+
+    [ASSISTANT CREDENTIALS]
+    iam_apikey = {apikey}
+    url = {url}
+    version=2019-02-28
+
+    [DEFAULT]
+    mode = blind
+    workspace_id = {workspace_id}
+
+    test_input_file = {input_file}
+    {previous_execution_info}
+    output_directory = {output_directory}
+    conf_thres = {conf_threshold}
+    keep_workspace_after_test = no
+    max_test_rate = {max_test_rate}
+    """
+
+    def __init__(self, apikey, url, skill_name, output_directory):
+        super().__init__(output_directory, 'blind')
+        template = inspect.cleandoc(self.template)
+        input_file = os.path.join(output_directory, 'input.csv')
+        if not os.path.isfile(input_file):
+            raise ValueError(f'Blind test input file "{input_file}" not found')
+        workspace_id = wa.workspace_id_from_skill_name(apikey, url, skill_name)
+        if not workspace_id:
+            raise ValueError(f'Skill "{skill_name}" not found')
+        report_file = os.path.join(output_directory, 'blind-out.csv')
+        previous_report = os.path.join(output_directory, 'blind-out-previous.csv')
+        previous_execution_info = ''
+        if os.path.isfile(report_file):
+            shutil.copyfile(report_file, previous_report)
+            previous_execution_info = f'previous_blind_out = {previous_report}'
+        self.contents = template.format(apikey=apikey,
+                                        url=url,
+                                        workspace_id=workspace_id,
+                                        input_file=input_file,
+                                        previous_execution_info=previous_execution_info,
+                                        output_directory=output_directory,
+                                        **self.defaults)
+
+    def cfg_contents(self):
+        return self.contents
 
 class wa_testing_tool_core(object):
 
@@ -148,4 +196,10 @@ class wa_testing(object):
     def k_fold(cls, apikey: str, url: str, skill_file: str, folds: int, show_graphics: bool):
         output_dir = cls._root_for_skill(cls._skill_name(skill_file), 'kfold')
         test_files = KFoldTestFiles(apikey, url, skill_file, folds, output_dir)
+        return wa_testing_tool_core.run(test_files, show_graphics)
+
+    @classmethod
+    def blind(cls, apikey: str, url: str, skill_name: str, show_graphics: bool):
+        output_dir = cls._root_for_skill(skill_name, 'blind')
+        test_files = BlindTestFiles(apikey, url, skill_name, output_dir)
         return wa_testing_tool_core.run(test_files, show_graphics)

@@ -124,6 +124,13 @@ class wa(object):
         return None
 
     @staticmethod
+    def workspace_id_from_skill_name(apikey: str, url: str, name: str) -> str:
+        for skill_tuple in wa(apikey, url)._list_skills():
+            if skill_tuple.name == name:
+                return skill_tuple.id
+        return ''
+
+    @staticmethod
     def list_skills(apikey: str, url: str, pattern: str) -> List[SkillTuple]:
         return wa(apikey, url)._list_skills(pattern)
 
