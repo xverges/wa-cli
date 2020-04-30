@@ -2,6 +2,7 @@
 # spell-checker:ignore thres
 
 from abc import ABC, abstractmethod
+from glob import glob
 import inspect
 import json
 import os
@@ -9,6 +10,8 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
+
 from ..helpers import cfg
 from ..wa import  wa
 
@@ -151,7 +154,7 @@ class BlindTestFiles(TestingToolTestFiles):
     def cfg_contents(self):
         return self.contents
 
-class wa_testing_tool_core(object):
+class TestingToolCoreMode(object):
 
     @classmethod
     def _run_command(cls, cfg_file: str):
@@ -179,6 +182,48 @@ class wa_testing_tool_core(object):
         finally:
             test_files.cleanup()
 
+class TestingToolCoreFlow(object):
+
+    @classmethod
+    def run(cls, apikey: str, url: str, skill_name: str, output_dir: str) -> int:
+        final_rc = 0
+        test_count = 0
+        workspace_id = wa.workspace_id_from_skill_name(apikey, url, skill_name)
+        if not workspace_id:
+            raise ValueError(f'Skill "{skill_name}" not found')
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env = os.environ.copy()
+            env['ASSISTANT_PASSWORD'] = apikey
+            env['ASSISTANT_URL'] = url
+            env['WORKSPACE_ID'] = workspace_id
+            script_path = os.path.join(cfg.test_scripts_folder(), 'dialog_test', 'flowtest.py')
+            for file_path in glob(os.path.join(output_dir, '*.tsv')):
+                if file_path.endswith('_report.tsv'):
+                    continue
+                test_count += 1
+                test_name = os.path.splitext(os.path.basename(file_path))[0]
+                command_line = [
+                    sys.executable,
+                    script_path,
+                    file_path]
+                print(f'Launching {" ".join(command_line)}')
+                completed = subprocess.run(command_line,
+                                           stderr=sys.stderr,
+                                           stdout=sys.stdout,
+                                           env=env,
+                                           cwd=tmpdir)
+                for report in ['json', 'tsv']:
+                    report_file = os.path.join(tmpdir, 'results', f'{test_name}_report.{report}')
+                    if os.path.isfile(report_file):
+                        shutil.copy(report_file, output_dir)
+                print(f'Moving {test_name}_report.tsv to {output_dir}')
+                if completed.returncode != 0:
+                    final_rc = completed.returncode
+        if not test_count:
+            print('No tests have been executed', file=sys.stderr)
+            final_rc = 1
+        return final_rc
+
 
 class wa_testing(object):
 
@@ -196,10 +241,15 @@ class wa_testing(object):
     def k_fold(cls, apikey: str, url: str, skill_file: str, folds: int, show_graphics: bool):
         output_dir = cls._root_for_skill(cls._skill_name(skill_file), 'kfold')
         test_files = KFoldTestFiles(apikey, url, skill_file, folds, output_dir)
-        return wa_testing_tool_core.run(test_files, show_graphics)
+        return TestingToolCoreMode.run(test_files, show_graphics)
 
     @classmethod
     def blind(cls, apikey: str, url: str, skill_name: str, show_graphics: bool):
         output_dir = cls._root_for_skill(skill_name, 'blind')
         test_files = BlindTestFiles(apikey, url, skill_name, output_dir)
-        return wa_testing_tool_core.run(test_files, show_graphics)
+        return TestingToolCoreMode.run(test_files, show_graphics)
+
+    @classmethod
+    def flow(cls, apikey: str, url: str, skill_name: str) -> int:
+        output_dir = cls._root_for_skill(skill_name, 'flow')
+        return TestingToolCoreFlow.run(apikey, url, skill_name, output_dir)

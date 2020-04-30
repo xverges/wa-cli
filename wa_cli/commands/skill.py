@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import sys
+
 import click
 from .helpers import protect_readonly
 from .helpers import common_options
@@ -143,7 +145,9 @@ def flow(apikey, url, skill_name):
     Example input: https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/dialog_test/tests/Customer_Care_Test.tsv
     You can start an new conversation specifying NEWCONVERSATION as the user input.
     """
-    wa_testing.flow(apikey, url, skill_name)
+    rc = wa_testing.flow(apikey, url, skill_name)
+    if rc:
+        sys.exit(rc)
 
 skill.add_command(test)
 
