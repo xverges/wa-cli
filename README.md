@@ -72,4 +72,20 @@ and to set the variables that you provided when running `wa-cli init`. The
 specific command completion syntax depends on your default shell, as defined
 in `$SHELL`.
 
+These are the sub-folders in your `wa-cli`-managed WA project:
+
+* `/skills`: where `wa-cli` downloads WA JSON skill files. Each of them is
+  named `<skill-id>-<skill-name>.json`.
+* `/waw`: where the Watson Assistant Workbench disassembles the above files
+  into diff-friendly XML and CSV files, and also where they are re-assembled
+  before being deployed to WA.
+
+  You'll find there a shared `re-assembled` folder (not kept under version
+  control), and a `<skill-name>` folder for each of the skills that you have
+  decomposed with `wa-cli skill decompose <skill-file>` or `wa-cli sandbox pull <skill-name>`.
+* `/tests/kfold`: the reports resulting form `wa-cli skill test kfold <skill-file>`
+  are written to `/tests/kfold/<skill-name>`.
+* `/tests/flow`: the input files and the test reports resulting from
+  `wa-cli skill test flow <skill-name>` or `wa-cli sandbox test`.
+
 <https://github.com/xverges/wa-cli-demo> demonstrates the use of sandboxes

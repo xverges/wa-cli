@@ -254,9 +254,7 @@ def update_gitignore_contents(existing_lines: list) -> list:
     /.env
     /.wa-cli/readonly_services.txt
     /waw/re-assembled
-    /test/*/data/kfold/*
-    /test/*/data/workspace_base.json
-    /test/*/data/*-train.csv
+    wa-testing-tool.ini
     wa_json
     log.log
     .DS_Store

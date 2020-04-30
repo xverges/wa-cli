@@ -108,12 +108,42 @@ def test():
 @click.argument('skill_file', type=click.Path(exists=True))
 @click.option('--folds', default=5, show_default=True)
 @click.option('--show-graphics', is_flag=True, help='Open a browser with the generated images')
-def k_fold(apikey, url, skill_file, folds, show_graphics):
+def kfold(apikey, url, skill_file, folds, show_graphics):
     """
     k-fold test to measure ground truth consistency
+
+    \b
+    See https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/examples/kfold.md for details
     """
     wa_testing.k_fold(apikey, url, skill_file, folds, show_graphics)
 
+@test.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+@click.option('--show-graphics', is_flag=True, help='Open a browser with the generated images')
+def blind(apikey, url, skill_name, show_graphics):
+    """
+    blind test using a CSV file with utterances and expected intents
+
+    \b
+    The file <project_root>/test/blind/<skill_name>/input.csv will be used as input.
+    See https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/examples/blind.md for details
+    """
+    wa_testing.blind(apikey, url, skill_name, show_graphics)
+
+@test.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+def flow(apikey, url, skill_name):
+    """
+    dialog flow test
+
+    \b
+    Files matching <project_root>/test/flow/<skill_name>/*.tsv will be used as input.
+    Example input: https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/dialog_test/tests/Customer_Care_Test.tsv
+    You can start an new conversation specifying NEWCONVERSATION as the user input.
+    """
+    wa_testing.flow(apikey, url, skill_name)
 
 skill.add_command(test)
 
