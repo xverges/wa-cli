@@ -11,6 +11,7 @@ from .helpers import common_options
 from .helpers import cfg
 from .helpers import git
 from .wa import wa
+from .wa_testing import wa_testing
 from .workbench import workbench
 
 
@@ -105,6 +106,72 @@ def delete_sandbox(ctx, apikey, url, skill_name):
     No files are deleted by this command.
     """
     Sandbox(apikey, url, skill_name).delete()
+
+
+@click.group()
+def test():
+    """
+    Test related commands
+    """
+
+
+@test.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+@click.option('--folds', default=5, show_default=True)
+@click.option('--show-graphics', is_flag=True, help='Open a browser with the generated images')
+def kfold(apikey, url, skill_name, folds, show_graphics):
+    """
+    k-fold test to measure ground truth consistency
+
+    \b
+    The test data is obtained from the skill deployed as a sandbox.
+    See https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/examples/kfold.md for details
+    """
+    sandbox = Sandbox(apikey, url, skill_name)
+    output_dir = wa_testing.output_dir_for_skill(skill_name, 'kfold')
+    wa_testing.k_fold(apikey, url, '', folds, show_graphics, skill_name=sandbox.sandbox_name, output_dir=output_dir)
+
+
+@test.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+@click.option('--show-graphics', is_flag=True, help='Open a browser with the generated images')
+def blind(apikey, url, skill_name, show_graphics):
+    """
+    blind test using a CSV file with utterances and expected intents
+
+    \b
+    The tests will be run on the skill deployed as a sandbox.
+    The file <project_root>/test/blind/<skill_name>/input.csv will be used as input.
+    See https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/examples/blind.md for details
+    """
+    sandbox = Sandbox(apikey, url, skill_name)
+    output_dir = wa_testing.output_dir_for_skill(skill_name, 'blind')
+    wa_testing.blind(apikey, url, sandbox.sandbox_name, show_graphics, output_dir=output_dir)
+
+
+@test.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+def flow(apikey, url, skill_name):
+    """
+    dialog flow test
+
+    \b
+    The tests will be run on the skill deployed as a sandbox.
+    Files matching <project_root>/test/flow/<skill_name>/*.tsv will be used as input. Example input:
+    https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/dialog_test/tests/Customer_Care_Test.tsv
+    You can start an new conversation specifying NEWCONVERSATION as the user input.
+    """
+    sandbox = Sandbox(apikey, url, skill_name)
+    output_dir = wa_testing.output_dir_for_skill(skill_name, 'flow')
+    rc = wa_testing.flow(apikey, url, sandbox.sandbox_name, output_dir=output_dir)
+    if rc:
+        sys.exit(rc)
+
+
+sandbox.add_command(test)
 
 
 class Sandbox(object):

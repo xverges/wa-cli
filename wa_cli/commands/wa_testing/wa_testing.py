@@ -27,7 +27,7 @@ class TestingToolTestFiles(ABC):
         self.output_directory = output_directory
         self.test_type = test_type
         self.cfg_path = os.path.join(output_directory, 'wa-testing-tool.ini')
-        self.skill_name = os.path.basename(output_directory)
+        self.master_skill_name = os.path.basename(output_directory)
         os.makedirs(self.output_directory, exist_ok=True)
 
     @abstractmethod
@@ -55,7 +55,7 @@ class TestingToolTestFiles(ABC):
         html = f"""
         <html>
             <body>
-                <h1>Skill: {self.skill_name}</h1>
+                <h1>Skill: {self.master_skill_name}</h1>
                 <figure>
                     <img src="./{self.test_type}.png" width="60%">
                 </figure>
@@ -86,7 +86,7 @@ class KFoldTestFiles(TestingToolTestFiles):
 
     [DEFAULT]
     mode = kfold
-    workspace_id = {skill_file}
+    workspace_id = {workspace_id}
 
     fold_num = {fold_num}
     output_directory = {output_directory}
@@ -95,12 +95,14 @@ class KFoldTestFiles(TestingToolTestFiles):
     max_test_rate = {max_test_rate}
     """
 
-    def __init__(self, apikey, url, skill_file, fold_num, output_directory):
+    def __init__(self, apikey, url, skill_name, skill_file, fold_num, output_directory):
         super().__init__(output_directory, 'kfold')
         template = inspect.cleandoc(self.template)
+
+        workspace_id = skill_file if not skill_name else wa.workspace_id_from_skill_name(apikey, url, skill_name)
         self.contents = template.format(apikey=apikey,
                                         url=url,
-                                        skill_file=skill_file,
+                                        workspace_id=workspace_id,
                                         fold_num=fold_num,
                                         output_directory=output_directory,
                                         **self.defaults)
@@ -190,6 +192,8 @@ class TestingToolCoreFlow(object):
 
     @classmethod
     def run(cls, apikey: str, url: str, skill_name: str, output_dir: str) -> int:
+        if skill_name != os.path.basename(output_dir):
+            print(f'Running on a sandbox. Using skill "{skill_name}"')
         final_rc = 0
         test_count = 0
         workspace_id = wa.workspace_id_from_skill_name(apikey, url, skill_name)
@@ -237,23 +241,28 @@ class wa_testing(object):
             return json.load(json_file)['name']
 
     @classmethod
-    def _root_for_skill(cls, skill_name, test_type):
+    def output_dir_for_skill(cls, skill_name, test_type):
         root = cfg.test_folder()
         return os.path.join(root, test_type, skill_name)
 
     @classmethod
-    def k_fold(cls, apikey: str, url: str, skill_file: str, folds: int, show_graphics: bool):
-        output_dir = cls._root_for_skill(cls._skill_name(skill_file), 'kfold')
-        test_files = KFoldTestFiles(apikey, url, skill_file, folds, output_dir)
+    def k_fold(cls, apikey: str, url: str, skill_file: str, folds: int, show_graphics: bool,
+               output_dir: str = '', skill_name: str = ''):
+        if not output_dir:
+            name = skill_name if skill_name else cls._skill_name(skill_file)
+            output_dir = cls.output_dir_for_skill(name, 'kfold')
+        test_files = KFoldTestFiles(apikey, url, skill_name, skill_file, folds, output_dir)
         return TestingToolCoreMode.run(test_files, show_graphics)
 
     @classmethod
-    def blind(cls, apikey: str, url: str, skill_name: str, show_graphics: bool):
-        output_dir = cls._root_for_skill(skill_name, 'blind')
+    def blind(cls, apikey: str, url: str, skill_name: str, show_graphics: bool, output_dir: str = ''):
+        if not output_dir:
+            output_dir = cls.output_dir_for_skill(skill_name, 'blind')
         test_files = BlindTestFiles(apikey, url, skill_name, output_dir)
         return TestingToolCoreMode.run(test_files, show_graphics)
 
     @classmethod
-    def flow(cls, apikey: str, url: str, skill_name: str) -> int:
-        output_dir = cls._root_for_skill(skill_name, 'flow')
+    def flow(cls, apikey: str, url: str, skill_name: str, output_dir: str = '') -> int:
+        if not output_dir:
+            output_dir = cls.output_dir_for_skill(skill_name, 'flow')
         return TestingToolCoreFlow.run(apikey, url, skill_name, output_dir)
