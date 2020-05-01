@@ -119,6 +119,7 @@ def kfold(apikey, url, skill_file, folds, show_graphics):
     """
     wa_testing.k_fold(apikey, url, skill_file, folds, show_graphics)
 
+
 @test.command()
 @common_options.add(common_options.mandatory)
 @click.argument('skill_name', type=click.STRING, required=True)
@@ -133,6 +134,7 @@ def blind(apikey, url, skill_name, show_graphics):
     """
     wa_testing.blind(apikey, url, skill_name, show_graphics)
 
+
 @test.command()
 @common_options.add(common_options.mandatory)
 @click.argument('skill_name', type=click.STRING, required=True)
@@ -141,13 +143,14 @@ def flow(apikey, url, skill_name):
     dialog flow test
 
     \b
-    Files matching <project_root>/test/flow/<skill_name>/*.tsv will be used as input.
-    Example input: https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/dialog_test/tests/Customer_Care_Test.tsv
+    Files matching <project_root>/test/flow/<skill_name>/*.tsv will be used as input. Example input:
+    https://github.com/cognitive-catalyst/WA-Testing-Tool/blob/master/dialog_test/tests/Customer_Care_Test.tsv
     You can start an new conversation specifying NEWCONVERSATION as the user input.
     """
     rc = wa_testing.flow(apikey, url, skill_name)
     if rc:
         sys.exit(rc)
+
 
 skill.add_command(test)
 

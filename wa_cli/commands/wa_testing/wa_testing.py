@@ -13,7 +13,8 @@ import sys
 import tempfile
 
 from ..helpers import cfg
-from ..wa import  wa
+from ..wa import wa
+
 
 class TestingToolTestFiles(ABC):
 
@@ -72,6 +73,7 @@ class TestingToolTestFiles(ABC):
         with open(html_path, 'w') as _file:
             _file.write(html)
         return html_path
+
 
 class KFoldTestFiles(TestingToolTestFiles):
 
@@ -154,6 +156,7 @@ class BlindTestFiles(TestingToolTestFiles):
     def cfg_contents(self):
         return self.contents
 
+
 class TestingToolCoreMode(object):
 
     @classmethod
@@ -181,6 +184,7 @@ class TestingToolCoreMode(object):
             return success
         finally:
             test_files.cleanup()
+
 
 class TestingToolCoreFlow(object):
 
