@@ -21,5 +21,7 @@ def current_branch() -> str:
 
 
 def skill_is_in_master(skill_name: str) -> bool:
+    if 'TRAVIS' in os.environ and os.environ['TRAVIS'] == 'true':
+        return True
     output = _run_command(['git', 'ls-tree', f'{main_branch()}:{WAW_FOLDER}/{skill_name}'])
     return output and len(output.split()) >= 6
