@@ -1,7 +1,7 @@
 # wa-cli
 click==7.0
 colorama==0.4.3
-pytest==5.3
+pytest>=5.3
 
 # Watson Assistant Workbench
 configparser
