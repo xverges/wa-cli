@@ -10,6 +10,9 @@ def _run_command(command: list) -> str:
 
 
 def current_branch() -> str:
+    if 'TRAVIS_PULL_REQUEST_BRANCH' in os.environ:
+        if os.environ['TRAVIS_PULL_REQUEST_BRANCH']:
+            return 'PR_' + os.environ['TRAVIS_PULL_REQUEST_BRANCH']
     if 'TRAVIS_BRANCH' in os.environ:
         return os.environ['TRAVIS_BRANCH']
     output = _run_command(['git', 'branch'])
