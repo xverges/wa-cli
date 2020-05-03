@@ -25,11 +25,13 @@ def entry_point():
 
 
 @entry_point.command()
-def init():
+@click.option('--main-branch', default='master', show_default=True)
+@click.option('--no-prompt', default=False, is_flag=True)
+def init(main_branch, no_prompt):
     """
     Initialise the current folder for further work with wa-cli
     """
-    cfg.init()
+    cfg.init(not no_prompt, main_branch)
 
 
 @entry_point.command()

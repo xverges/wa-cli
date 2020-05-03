@@ -24,14 +24,17 @@ _cache = {'project_folder': '',
           'cfg': {}}
 
 
-def init():
+def init(prompt: bool = True, main_branch: str = 'master'):
 
-    click.confirm('This will initialise the current folder as a wa-cli project. Continue?',
-                  abort=True,
-                  default=True)
+    if prompt:
+        click.confirm('This will initialise the current folder as a wa-cli project. Continue?',
+                      abort=True,
+                      default=True)
+        apikey, url, apikey_src, url_src, main_branch = _init_prompt(main_branch)
+    else:
+        apikey, url, apikey_src, url_src = '', '', '', ''
+
     _check_dependencies()
-
-    apikey, url, apikey_src, url_src, main_branch = _init_prompt()
 
     cfg_file = '.env'
     contents = read_file_contents(cfg_file)
@@ -79,12 +82,12 @@ def env_help():
                '   ' + get_env_setup_line() + '\n')
 
 
-def _init_prompt():
+def _init_prompt(main_branch: str):
     apikey = click.prompt('Enter the apikey of the service that you are going to be targeting', '')
     url = click.prompt('Enter the url of the service that you are going to be targeting', '')
     apikey_src = click.prompt('If you plan to clone skills from a different service, enter its apikey', '')
     url_src = click.prompt('If you plan to clone skills from a different service, enter its url', '')
-    main_branch = click.prompt('Enter your main branch. Usually, "master"', 'master')
+    main_branch = click.prompt('Enter your main branch. Usually, "master"', main_branch)
     return (apikey, url, apikey_src, url_src, main_branch)
 
 
@@ -292,10 +295,11 @@ def _check_dependencies():
 
     waw_path = get_cfg_value('WAW_PATH')
     waw_test_tool_path = get_cfg_value('WA_TEST_TOOL_PATH')
-    update_cfg = not waw_path or \
-                 not waw_test_tool_path or \
-                 not os.path.isdir(waw_path) or \
-                 not os.path.isdir(waw_test_tool_path)
+    update_cfg = \
+        not waw_path or \
+        not waw_test_tool_path or \
+        not os.path.isdir(waw_path) or \
+        not os.path.isdir(waw_test_tool_path)
 
     base_folder = os.path.join(get_code_folder(), 'tools')
     os.makedirs(base_folder, exist_ok=True)
