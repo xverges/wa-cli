@@ -1,4 +1,5 @@
 
+import os
 import subprocess
 
 from .cfg import WAW_FOLDER, main_branch
@@ -9,7 +10,10 @@ def _run_command(command: list) -> str:
 
 
 def current_branch() -> str:
+    if 'TRAVIS_BRANCH' in os.environ:
+        return os.environ['TRAVIS_BRANCH']
     output = _run_command(['git', 'branch'])
+
     for line in output.splitlines():
         if line.startswith('*'):
             return line.split()[1]
