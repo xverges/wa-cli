@@ -108,6 +108,17 @@ def delete_sandbox(ctx, apikey, url, skill_name):
     Sandbox(apikey, url, skill_name).delete()
 
 
+@sandbox.command()
+@click.argument('skill_name', type=click.STRING, required=True, metavar='<skill_name>')
+@click.pass_context
+def name(ctx, skill_name):
+    """
+    Display the <skill_name> sandbox name associated with the current branch/travis build
+    """
+    sandbox = Sandbox('', '', skill_name)
+    click.echo(sandbox.sandbox_name)
+
+
 @click.group()
 def test():
     """

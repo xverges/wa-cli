@@ -188,7 +188,7 @@ class TestingToolCoreMode(object):
             test_files.cleanup()
 
 
-class TestingToolCoreFlow(object):
+class TestingToolFlowMode(object):
 
     @classmethod
     def run(cls, apikey: str, url: str, skill_name: str, output_dir: str) -> int:
@@ -265,4 +265,4 @@ class wa_testing(object):
     def flow(cls, apikey: str, url: str, skill_name: str, output_dir: str = '') -> int:
         if not output_dir:
             output_dir = cls.output_dir_for_skill(skill_name, 'flow')
-        return TestingToolCoreFlow.run(apikey, url, skill_name, output_dir)
+        return TestingToolFlowMode.run(apikey, url, skill_name, output_dir)
