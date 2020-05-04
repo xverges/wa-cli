@@ -98,6 +98,21 @@ def get(ctx, apikey, url, skill_name):
         click.echo('Command failed')
 
 
+@skill.command()
+@click.pass_context
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+def training_status(ctx, apikey, url, skill_name):
+    """
+    Return the training status of a skill
+    """
+    id = wa.workspace_id_from_skill_name(apikey, url, skill_name)
+    if not id:
+        click.echo('Non Existent')
+    else:
+        click.echo(wa.get_skill_status(apikey, url, id))
+
+
 @click.group()
 def test():
     """

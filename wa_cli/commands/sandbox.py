@@ -4,6 +4,7 @@
 import json
 import os
 import sys
+import time
 
 import click
 from .helpers import protect_readonly
@@ -117,6 +118,20 @@ def name(ctx, skill_name):
     """
     sandbox = Sandbox('', '', skill_name)
     click.echo(sandbox.sandbox_name)
+
+
+@sandbox.command()
+@common_options.add(common_options.mandatory)
+@click.argument('skill_name', type=click.STRING, required=True)
+@click.option('--timeout', default=300, show_default=True, help='Timeout in seconds')
+@click.pass_context
+def wait_for_ready(ctx, apikey, url, skill_name, timeout):
+    """
+    Wait for a skill sandbox to be trained after deployment
+
+    Returns 1 if timeout expires before the skill is ready, 0 otherwise.
+    """
+    sys.exit(Sandbox(apikey, url, skill_name).wait_for_ready(timeout))
 
 
 @click.group()
@@ -277,3 +292,22 @@ class Sandbox(object):
     def delete(self):
         self._check_current_branch(must_be_master=False)
         wa.delete_skill(self.apikey, self.url, name=self.sandbox_name)
+
+    def wait_for_ready(self, timeout):
+        start_time = time.time()
+        id = wa.workspace_id_from_skill_name(self.apikey, self.url, self.sandbox_name)
+        if not id:
+            click.echo(f'"{self.sandbox_name}" was not found status. Not waiting.')
+            return 1
+
+        while time.time() - start_time < timeout:
+            status = wa.get_skill_status(self.apikey, self.url, id)
+            if status == 'Available':
+                return 0
+            elif status == 'Training':
+                time.sleep(15)
+            else:
+                click.echo(f'"{self.sandbox_name}" status is {status}. Not waiting.')
+                return 1
+        click.echo(f'"{self.sandbox_name}" readiness timed out')
+        return 1

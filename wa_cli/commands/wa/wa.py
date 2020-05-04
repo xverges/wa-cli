@@ -64,6 +64,14 @@ class wa(object):
         results = self._audit_cleanup(results)
         return results
 
+    def _get_skill_status(self, skill_id: str) -> Dict:
+        response = self.service.get_workspace(skill_id,
+                                              export=False,
+                                              include_audit=False)
+        _trace_rate_limits('get_workspace_non_export', response)
+        results = response.get_result()
+        return results['status']
+
     def _create_skill(self, skill_data: Dict) -> bool:
         response = self.service.create_workspace(**skill_data)
         _trace_rate_limits('create_workspace', response)
@@ -158,6 +166,11 @@ class wa(object):
             return service._get_skill_file(skill_tuple)[0]
         else:
             return ''
+
+    @staticmethod
+    def get_skill_status(apikey: str, url: str, workspace_id: str) -> str:
+        "Get a skill training status from WA"
+        return wa(apikey, url)._get_skill_status(skill_id=workspace_id)
 
     @staticmethod
     def deploy_skill(apikey: str, url: str, skill_file: str, force: bool) -> bool:
