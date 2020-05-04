@@ -171,6 +171,7 @@ class wa(object):
             if not click.confirm(f'Do you want to overwrite the skill {matching[0].id}-{name} continue?',
                                  abort=True):
                 return False
+        click.echo(f'Deploying skill "{name}"')
         new_skill.pop('created', None)
         new_skill.pop('status', None)
         new_skill.pop('updated', None)
