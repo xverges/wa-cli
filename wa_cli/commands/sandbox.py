@@ -25,7 +25,7 @@ def sandbox(ctx):
     \b
     Sample workflow:
     $ git checkout master
-    $ wa-cli sandbox init your_skill
+    $ wa-cli sandbox enable your_skill
     $ git checkout -b topic_branch
     $ wa-cli sandbox push your_skill
     # Go to the WA GUI and work with topic_branch__your_skill
@@ -40,7 +40,7 @@ def sandbox(ctx):
 @common_options.add(common_options.mandatory)
 @click.argument('skill_name', type=click.STRING, required=True, metavar='<skill_name>')
 @click.pass_context
-def init(ctx, apikey, url, skill_name):
+def enable(ctx, apikey, url, skill_name):
     """
     Enable the creation of a skill sandbox for other git branches
 
@@ -48,7 +48,7 @@ def init(ctx, apikey, url, skill_name):
     <project_folder>/waw/<skill_name>. This should be executed on your main
     git branch, and the decomposed files committed to it.
     """
-    Sandbox(apikey, url, skill_name).init()
+    Sandbox(apikey, url, skill_name).enable()
 
 
 @sandbox.command()
@@ -285,7 +285,7 @@ class Sandbox(object):
         self._revert_metadata_changes()
         click.echo('Done!')
 
-    def init(self):
+    def enable(self):
         self._check_current_branch(must_be_master=True)
         self._decompose(self.skill_name)
 
