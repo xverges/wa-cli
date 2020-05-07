@@ -2,6 +2,7 @@
 import errno
 import inspect
 import os
+import shutil
 import subprocess
 import sys
 
@@ -11,6 +12,7 @@ import click
 WACLI_FOLDER = '.wa-cli'
 WACLI_CFG = 'wa-cli.cfg'
 SKILLS_FOLDER = 'skills'
+RESOURCES_FOLDER = 'resources'
 TEST_FOLDER = 'test'
 WAW_FOLDER = 'waw'
 READONLY_SERVICES = 'readonly_services.txt'
@@ -80,6 +82,36 @@ def env_help():
     click.echo('Set the environment variables that "wa-cli init" added to the .env file\n'
                'and enable command completion by running \n\n'
                '   ' + get_env_setup_line() + '\n')
+
+
+def travis():
+    TRAVIS_FILE = '.travis.yml'
+    resources_folder = os.path.join(get_code_folder(), RESOURCES_FOLDER)
+    project_folder = get_project_folder()
+    target_travis = os.path.join(project_folder, TRAVIS_FILE)
+    if os.path.isfile(target_travis):
+        click.confirm(f'There is already a {TRAVIS_FILE} file. Do you want to overwrite it?',
+                      abort=True,
+                      default=False)
+    deploy_main = click.confirm('Do you want travis to deploy to non-sandbox skills when building the main branch?',
+                                abort=False,
+                                default=False)
+    deploy_main = str(deploy_main).upper()
+    time_out = click.prompt('Timeout (in seconds) to wait for skills to be trained after being deployed to be tested',
+                            180)
+    url = os.environ.get('WA_URL', False)
+    url_text = '# WA_URL needs to be defined.' if not url else \
+               f'- WA_URL={url}'
+    for script in ['travis-deploy.sh', 'travis-test.sh', 'travis-cleanup.sh']:
+        target_script = os.path.join(project_folder, WACLI_FOLDER, script)
+        shutil.copyfile(os.path.join(resources_folder, script), target_script)
+        os.chmod(target_script, 0o775)
+    with open(os.path.join(resources_folder, TRAVIS_FILE), 'r') as source:
+        template = source.read()
+        output = template.format(deploy_main=deploy_main, time_out=time_out, url_text=url_text)
+        with open(target_travis, 'w') as target:
+            target.write(output)
+    click.echo('Done! You can now enable your travis builds.')
 
 
 def _init_prompt(main_branch: str):

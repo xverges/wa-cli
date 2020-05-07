@@ -42,6 +42,14 @@ def env():
     cfg.env_help()
 
 
+@entry_point.command()
+def travis():
+    """
+    Add a .travis.yml file to run dialog flow tests
+    """
+    cfg.travis()
+
+
 entry_point.add_command(sandbox)
 entry_point.add_command(service)
 entry_point.add_command(skill)

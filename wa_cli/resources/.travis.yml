@@ -1,0 +1,27 @@
+group: travis_latest
+language: python
+cache: pip
+python:
+  - 3.8
+
+
+env:
+  global:
+    # **Customize your credentials and whether skills have to be deployed when building to the main branch**
+    - DEPLOY_MAIN_BRANCH={deploy_main}
+    - TRAINING_TIMEOUT_IN_SECONDS={time_out}
+    {url_text}
+    # WA_APIKEY needs to be defined. Use the reppo settings or an encrypted variable
+
+
+install:
+  - pip install https://github.com/xverges/wa-cli/archive/master.zip
+  - ./.wa-cli/travis-deploy.sh
+
+
+script:
+  - ./.wa-cli/travis-test.sh
+
+
+after_script:
+  - ./.wa-cli/travis-cleanup.sh
