@@ -18,7 +18,7 @@ WAW_FOLDER = 'waw'
 READONLY_SERVICES = 'readonly_services.txt'
 MAIN_BRANCH = 'main_branch.txt'
 
-GIT_WAW = ('https://github.com/xverges/watson-assistant-workbench.git', 'e174827')
+GIT_WAW = ('https://github.com/xverges/watson-assistant-workbench.git', '8f1f8e3')
 GIT_WTT = ('https://github.com/cognitive-catalyst/WA-Testing-Tool.git', '25c07b8')
 
 _cache = {'project_folder': '',
