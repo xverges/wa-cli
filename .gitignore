@@ -3,3 +3,6 @@
 *.egg-info
 /wa_cli/wa-cli.cfg
 /wa_cli/tools
+__pycache__
+/.vagrant
+/projects
