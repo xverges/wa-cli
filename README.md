@@ -102,7 +102,8 @@ These are the sub-folders in your `wa-cli`-managed WA project:
 
 A **sandbox** _branches_ a Watson Assistant skill: `wa-cli` creates a new skill
 so that you can focus on developing a feature without being affected by the work
-of others.
+of others. While on the command line, you can be reminded of the workflow to use
+by running `wa-cli sandbox | less`.
 
 From your main git branch, you enable the use of sandboxes for a given skill:
 

@@ -23,15 +23,79 @@ def sandbox(ctx):
     Work with skills in a branch-dependant sandbox.
 
     \b
-    Sample workflow:
-    $ git checkout master
-    $ wa-cli sandbox enable your_skill
-    $ git checkout -b topic_branch
-    $ wa-cli sandbox push your_skill
-    # Go to the WA GUI and work with topic_branch__your_skill
-    $ wa_cli sandbox pull
-    $ git diff
-    # ...
+    Sample workflow for main branch "main" and feature branch "feat":
+
+        \b
+        Enable your sandbox
+
+            \b
+            $ git checkout main
+            (main)$ wa-cli sandbox enable SkillName
+            (main)$ git checkout -b feat
+            (feat)$ wa-cli sandbox push SkillName
+
+        \b
+        Work in your sandbox
+
+            \b
+            <Go to the WA GUI and work with feat__SkillName>
+
+            \b
+            (feat)$ wa_cli sandbox pull SkillName
+            (feat)$ git diff
+            (feat)$ git add and commit
+
+            \b
+            <Use an editor to fix typos or make bulk changes or...>
+
+            \b
+            (feat)$ git add/commit/push
+            (feat)$ wa_cli sandbox push SkillName
+
+        \b
+        From your sandbox to the main skill
+
+            \b
+            Use a new sandbox to help in the review a submitted PR
+
+                \b
+                (main)$ git checkout origin/feat
+                (feat)$ git checkout -b review
+                (review)$ wa-cli sandbox push SkillName
+
+                \b
+                <verify whatever is needed using review__SkillName>
+
+                \b
+                (review)$ wa-cli sandbox delete SkillName
+                (review)$ git checkout main
+                (main)$ git branch -D review
+
+            \b
+            Deploy a merged PR
+
+                \b
+                (feat)$ git checkout main
+                (main)$ git pull
+                (main)$ wa-cli sandbox deploy SkillName
+
+            \b
+            Merge without PR and deploy to master
+
+                \b
+                (feat)$ git checkout main
+                (main)$ git pull
+                (main)$ git merge feat
+                (main)$ git push
+                (main)$ wa-cli sandbox deploy SkillName
+
+            \b
+            Recycle a sandbox (bring it to level with master)
+
+                \b
+                (main)$ git checkout feat
+                (feat)$ git reset --hard main
+                (feat)$ wa-cli sandbox push SkillName
     """
     cfg.check_context(ctx)
 
@@ -42,7 +106,7 @@ def sandbox(ctx):
 @click.pass_context
 def enable(ctx, apikey, url, skill_name):
     """
-    Enable the creation of a skill sandbox for other git branches
+    (master) Enable the creation of a skill sandbox for other git branches
 
     Downloads from WA the skill <skill_name> and decomposes it to files in
     <project_folder>/waw/<skill_name>. This should be executed on your main
@@ -58,7 +122,7 @@ def enable(ctx, apikey, url, skill_name):
 @protect_readonly
 def deploy(ctx, apikey, url, skill_name):
     """
-    Reassemble a skill and deploy it
+    (master) Reassemble a skill and deploy it.
 
     Deploys the files in <project_folder>/waw/<skill_name>. Must be executed from the
     main git branch.
@@ -73,7 +137,7 @@ def deploy(ctx, apikey, url, skill_name):
 @protect_readonly
 def push(ctx, apikey, url, skill_name):
     """
-    Reassemble a skill and deploy it as a sandbox
+    (topic branch) Reassemble a skill and deploy it as a sandbox
 
     Deploys the files in <project_folder>/waw/<skill_name> as a WA skill named
     "<gitbranch>__<skill_name>
@@ -87,7 +151,7 @@ def push(ctx, apikey, url, skill_name):
 @click.pass_context
 def pull(ctx, apikey, url, skill_name):
     """
-    Overwrite the decomposed skill with the contents of a sandbox
+    (topic branch) Overwrite the decomposed skill with the contents of a sandbox
 
     Download the WA skill "<git_branch>__<skill_name>" and decompose it
     to files in <project_folder>/waw/<skill_name>
@@ -102,7 +166,7 @@ def pull(ctx, apikey, url, skill_name):
 @protect_readonly
 def delete_sandbox(ctx, apikey, url, skill_name):
     """
-    Deletes the Watson Assistant skill <git_branch>__<skill_name>
+    (topic branch) Deletes the Watson Assistant skill <git_branch>__<skill_name>
 
     No files are deleted by this command.
     """
@@ -228,11 +292,14 @@ class Sandbox(object):
             self._error("Your wa-cli project needs to be under git version control to create a sandbox.")
         is_master = self.branch == cfg.main_branch()
         if not must_be_master and is_master:
-            self._error("A sandbox cannot be push/pulled while on the main git branch.\n"
-                        "Create the branch for your sandbox with git checkout -b branch_name")
+            self._error("A sandbox cannot be pulled/pushed while on the main git branch.\n"
+                        "Maybe you were thinking of running \n"
+                        "  wa-cli sandbox enable\nor\n  wa-cli sandbox deploy?\n"
+                        "Or, if you need to create a branch for your sandbox, run\n"
+                        "  git checkout -b branch_name")
         elif must_be_master and not is_master:
             self._error(f"A sandbox needs to be initialized from the main git branch ({cfg.main_branch()}).\n"
-                        f"Create the branch for your sandbox with git checkout -b branch_name")
+                        "Maybe you were thinking of running wa-cli sandbox pull/push?")
 
     def _check_skill_decomposed(self):
         skill_folder = os.path.join(cfg.waw_target_folder(), self.skill_name)
