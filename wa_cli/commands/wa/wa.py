@@ -125,7 +125,7 @@ class wa(object):
     @staticmethod
     def _get_cached(full_path: str, modified: str) -> object:
         if os.path.isfile(full_path):
-            with open(full_path, 'r') as json_file:
+            with open(full_path, 'r', encoding='utf-8') as json_file:
                 cached = json.load(json_file)
                 if cached['updated'] == modified:
                     return cached
@@ -176,7 +176,7 @@ class wa(object):
     def deploy_skill(apikey: str, url: str, skill_file: str, force: bool) -> bool:
         service = wa(apikey, url)
         skills = service._list_skills()
-        with open(skill_file, 'r') as json_file:
+        with open(skill_file, 'r', encoding='utf-8') as json_file:
             new_skill = json.load(json_file)
         name = new_skill['name']
         matching = [skill for skill in skills if skill.name == name]

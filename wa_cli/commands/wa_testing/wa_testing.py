@@ -45,7 +45,7 @@ class TestingToolTestFiles(ABC):
                 os.remove(tmp_file)
 
     def write_cfg(self):
-        with open(self.cfg_path, 'w') as _file:
+        with open(self.cfg_path, 'w', encoding='utf-8') as _file:
             _file.write(self.cfg_contents())
         return self.cfg_path
 
@@ -70,7 +70,7 @@ class TestingToolTestFiles(ABC):
         """
         html = inspect.cleandoc(html)
         html_path = os.path.join(self.output_directory, 'index.html')
-        with open(html_path, 'w') as _file:
+        with open(html_path, 'w', encoding='utf-8') as _file:
             _file.write(html)
         return html_path
 
@@ -237,7 +237,7 @@ class wa_testing(object):
 
     @staticmethod
     def _skill_name(skill_file):
-        with open(skill_file, 'r') as json_file:
+        with open(skill_file, 'r', encoding='utf-8') as json_file:
             return json.load(json_file)['name']
 
     @classmethod

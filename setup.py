@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 # From https://stackoverflow.com/a/50368460/239408
 # See other answers about why it is not a great practice to use the
 # detailed requirements.txt as the source for this
-with open('requirements.txt', 'r') as f:
+with open('requirements.txt', 'r', encoding='utf-8') as f:
     install_requires = [
         s for s in [
             line.strip(' \n') for line in f

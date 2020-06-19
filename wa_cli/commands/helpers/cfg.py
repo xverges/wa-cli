@@ -68,7 +68,7 @@ def init(prompt: bool = True, main_branch: str = 'master'):
     write_file_contents(cfg_file, contents)
 
     cfg_file = _main_branch_file()
-    with open(cfg_file, 'w') as _file:
+    with open(cfg_file, 'w', encoding='utf-8') as _file:
         _file.write(main_branch)
 
     click.echo('The values you have supplied have been added to the .env file')
@@ -106,10 +106,10 @@ def travis():
         target_script = os.path.join(project_folder, WACLI_FOLDER, script)
         shutil.copyfile(os.path.join(resources_folder, script), target_script)
         os.chmod(target_script, 0o775)
-    with open(os.path.join(resources_folder, TRAVIS_FILE), 'r') as source:
+    with open(os.path.join(resources_folder, TRAVIS_FILE), 'r', encoding='utf-8') as source:
         template = source.read()
         output = template.format(deploy_main=deploy_main, time_out=time_out, url_text=url_text)
-        with open(target_travis, 'w') as target:
+        with open(target_travis, 'w', encoding='utf-8') as target:
             target.write(output)
     click.echo('Done! You can now enable your travis builds.')
 
@@ -125,13 +125,13 @@ def _init_prompt(main_branch: str):
 
 def read_file_contents(file_name):
     if os.path.isfile(file_name):
-        with open(file_name, 'r') as _file:
+        with open(file_name, 'r', encoding='utf-8') as _file:
             return [line.strip() for line in _file.readlines()]
     return []
 
 
 def write_file_contents(file_name, contents):
-    with open(file_name, 'w') as _file:
+    with open(file_name, 'w', encoding='utf-8') as _file:
         _file.write("\n".join(contents))
 
 
@@ -183,7 +183,7 @@ def get_cfg_value(key: str) -> str:
     if not _cache['cfg']:
         cfg_file_path = get_common_cfg_file()
         if os.path.isfile(cfg_file_path):
-            with open(cfg_file_path, 'r') as cfg_file:
+            with open(cfg_file_path, 'r', encoding='utf-8') as cfg_file:
                 for line in cfg_file:
                     line = line.strip()
                     if not line.startswith('#') and '=' in line:
@@ -223,7 +223,7 @@ def _main_branch_file() -> str:
 
 
 def main_branch() -> str:
-    with open(_main_branch_file(), 'r') as _file:
+    with open(_main_branch_file(), 'r', encoding='utf-8') as _file:
         for line in _file.readlines():
             if line and not line.startswith('#'):
                 return line.strip()

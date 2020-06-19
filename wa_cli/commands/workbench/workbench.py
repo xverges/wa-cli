@@ -119,7 +119,7 @@ class workbench(object):
     def _reassemble_reassembled_json_files(cls, skill_name: str, tgt_folder: str):
 
         meta_file = os.path.join(cls._root, skill_name, 'meta.json')
-        with open(meta_file, 'r') as json_file:
+        with open(meta_file, 'r', encoding='utf-8') as json_file:
             meta = json.load(json_file)
             new_name = os.path.basename(tgt_folder)
             if skill_name != new_name:
@@ -147,7 +147,7 @@ class workbench(object):
                              'language',
                              'description']
         skill_file = os.path.join(tgt_folder, 'skill.json')
-        with open(skill_file, 'r') as json_file:
+        with open(skill_file, 'r', encoding='utf-8') as json_file:
             skill_dict = json.load(json_file)
         skill_dict['learning_opt_out'] = meta['learning_opt_out']
         skill_dict['system_settings'] = meta['system_settings']
@@ -157,7 +157,7 @@ class workbench(object):
 
     @classmethod
     def _get_skill_meta(cls, full_path: str) -> str:
-        with open(full_path, 'r') as json_file:
+        with open(full_path, 'r', encoding='utf-8') as json_file:
             cached = json.load(json_file)
             meta = {key: cached[key] for key in ['description',
                                                  'language',

@@ -335,7 +335,7 @@ class Sandbox(object):
     def _revert_metadata_changes(self):
         meta_file = os.path.join(cfg.waw_target_folder(), self.skill_name, 'meta.json')
 
-        with open(meta_file, 'r') as json_file:
+        with open(meta_file, 'r', encoding='utf-8') as json_file:
             meta = json.load(json_file)
         meta['name'] = self.skill_name
 
