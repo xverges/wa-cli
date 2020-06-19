@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import click
+from dotenv import load_dotenv
 
 
 WACLI_FOLDER = '.wa-cli'
@@ -40,8 +41,7 @@ def init(prompt: bool = True, main_branch: str = 'master'):
 
     cfg_file = '.env'
     contents = read_file_contents(cfg_file)
-    env_setup = get_env_setup_line()
-    header = f'# {env_setup}'
+    header = f'# {shell_completion()}'
     vars = {
         'WA_APIKEY': apikey,
         'WA_URL': url,
@@ -72,16 +72,17 @@ def init(prompt: bool = True, main_branch: str = 'master'):
         _file.write(main_branch)
 
     click.echo('The values you have supplied have been added to the .env file')
-    click.echo('You can set them as environment variables\n'
-               'and enable command completion by running \n\n'
-               '   ' + env_setup + '\n\n'
-               'You don''t need to remember this: run "wa-cli env" to be reminded')
+
+    if os.name != 'nt':
+        click.echo('You can run now\n'
+                   '   ' + shell_completion() + '\n\n'
+                   'to enable command completion.\n'
+                   'You don''t need to remember this: run "wa-cli env" to be reminded')
 
 
 def env_help():
-    click.echo('Set the environment variables that "wa-cli init" added to the .env file\n'
-               'and enable command completion by running \n\n'
-               '   ' + get_env_setup_line() + '\n')
+    click.echo('Enable command completion by running \n\n'
+               '   ' + shell_completion() + '\n')
 
 
 def travis():
@@ -143,10 +144,6 @@ def shell_completion():
     elif 'zsh' in shell:
         source = 'source_zsh'
     return 'eval "$(_WA_CLI_COMPLETE=' + source + ' wa-cli)"'
-
-
-def get_env_setup_line():
-    return f'set -o allexport; source .env; set +o allexport; {shell_completion()}'
 
 
 def get_project_folder() -> str:
@@ -236,6 +233,9 @@ def check_context(ctx):
         click.secho(msg, fg='white', bg='red')
         folder = os.path.join(os.getcwd(), WACLI_FOLDER)
         sys.exit(FileNotFoundError(errno.ENOENT, msg, folder))
+    else:
+        env_file = os.path.join(folder, '.env')
+        load_dotenv(dotenv_path=env_file)
 
     ctx.ensure_object(dict)
     ctx.obj['project_folder'] = folder

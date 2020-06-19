@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import click
+import os
 
+import click
 
 from .commands.helpers import cfg
 from .commands.sandbox import sandbox
@@ -34,12 +35,13 @@ def init(main_branch, no_prompt):
     cfg.init(not no_prompt, main_branch)
 
 
-@entry_point.command()
-def env():
-    """
-    Instructions to set env vars and enable command completion
-    """
-    cfg.env_help()
+if os.name != 'nt':
+    @entry_point.command()
+    def env():
+        """
+        Instructions to enable command completion
+        """
+        cfg.env_help()
 
 
 @entry_point.command()
