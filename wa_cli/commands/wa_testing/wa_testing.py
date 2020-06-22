@@ -6,11 +6,12 @@ from glob import glob
 import inspect
 import json
 import os
-import shlex
+import pathlib
 import shutil
 import subprocess
 import sys
 import tempfile
+import webbrowser
 
 from ..helpers import cfg
 from ..wa import wa
@@ -182,7 +183,7 @@ class TestingToolCoreMode(object):
             success = cls._run_command(cfg_path)
             html_path = test_files.graphics_as_html()
             if show_graphics:
-                os.system(f'open {shlex.quote(html_path)}')
+                webbrowser.open_new_tab(pathlib.Path(html_path).as_uri())
             return success
         finally:
             test_files.cleanup()
