@@ -2,6 +2,7 @@
 import errno
 import inspect
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -77,7 +78,10 @@ def init(prompt: bool = True, main_branch: str = 'master'):
         click.echo('You can run now\n'
                    '   ' + shell_completion() + '\n\n'
                    'to enable command completion.\n'
-                   'You don''t need to remember this: run "wa-cli env" to be reminded')
+                   'You don''t need to remember this: run "wa-cli env" to be reminded.\n\n'
+                   'A .gitignore file has been created. It includes the skills folder,\n'
+                   'where Watson Assistant skills are downloaded, because it is very hard to\n'
+                   'track changes in JSON skills; you may want to change that')
 
 
 def env_help():
@@ -299,6 +303,9 @@ def update_gitignore_contents(existing_lines: list) -> list:
     for entry in entries:
         if not any([(line.strip() == entry) for line in existing_lines]):
             existing_lines.append(entry)
+    exp = re.compile(r'(^|^#\s*/?)skills\s*$')
+    if not any([exp.fullmatch(line) for line in existing_lines]):
+        existing_lines.append('/skills')
     return existing_lines
 
 

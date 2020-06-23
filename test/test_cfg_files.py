@@ -69,18 +69,40 @@ def test_existing_cfg_file():
     assert cfg.update_env_contents(input_lines, env_vars('1', '2', '', '4'), header) == expected
 
 
-def test_existing_gitignore_without():
+def test_existing_gitignore_without_1():
     existing = [
         '# random comment',
-        '# /.env'
+        '# /.env',
+        '#    /skills',
     ]
     expected = [
         '# random comment',
         '# /.env',
+        '#    /skills',
         '/.env',
         '/.wa-cli/readonly_services.txt'
     ]
-    assert cfg.update_gitignore_contents(existing)[:4] == expected[:4]
+    updated = cfg.update_gitignore_contents(existing)
+    assert updated[:len(expected)] == expected
+    assert '/skills' not in updated
+
+
+def test_existing_gitignore_without_2():
+    existing = [
+        '# random comment',
+        '# /.env',
+        '#skills',
+    ]
+    expected = [
+        '# random comment',
+        '# /.env',
+        '#skills',
+        '/.env',
+        '/.wa-cli/readonly_services.txt'
+    ]
+    updated = cfg.update_gitignore_contents(existing)
+    assert updated[:len(expected)] == expected
+    assert '/skills' not in updated
 
 
 def test_existing_gitignore_with():
@@ -94,7 +116,9 @@ def test_existing_gitignore_with():
         '/.env',
         '/.wa-cli/readonly_services.txt'
     ]
-    assert cfg.update_gitignore_contents(existing)[:3] == expected[:3]
+    updated = cfg.update_gitignore_contents(existing)
+    assert updated[:len(expected)] == expected
+    assert '/skills' in updated
 
 
 def test_no_gitignore():
@@ -103,4 +127,6 @@ def test_no_gitignore():
         '/.env',
         '/.wa-cli/readonly_services.txt'
     ]
-    assert cfg.update_gitignore_contents(existing)[:2] == expected[:2]
+    updated = cfg.update_gitignore_contents(existing)
+    assert updated[:len(expected)] == expected
+    assert '/skills' in updated
