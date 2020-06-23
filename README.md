@@ -42,8 +42,8 @@ In the quest of the above goals, `wa-cli` has made easier some other tasks:
 
 ## Installing
 
-This has only been tested on Python 3.8.1 on OSX. I created a conda environment
-with that version running `conda env create -f environment.yml`.
+This has only been tested on Python 3.8.1 on OSX, and Python 3.8.3 on Windows 10.
+I created a conda environment with that version running `conda env create -f environment.yml`.
 
 <!-- markdownlint-disable MD014 -->
 ```bash
